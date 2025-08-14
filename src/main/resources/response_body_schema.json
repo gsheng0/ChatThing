@@ -1,0 +1,57 @@
+{
+  "id": "string",
+  "object": "string",
+  "created_at": "number (Unix timestamp)",
+  "status": "string",
+  "background": "boolean",
+  "error": "null|string|object",
+  "model": "string",
+  "output": [
+    {
+      "id": "string",
+      "type": "string",
+      "status": "string",
+      "content": [
+        {
+          "type": "string",
+          "annotations": "array",
+          "logprobs": "array",
+          "text": "string"
+        }
+      ],
+      "role": "string"
+    }
+  ],
+  "parallel_tool_calls": "boolean",
+  "reasoning": {
+    "effort": "null|string",
+    "summary": "null|string"
+  },
+  "service_tier": "string",
+  "store": "boolean",
+  "temperature": "number",
+  "text": {
+    "format": {
+      "type": "string"
+    },
+    "verbosity": "string"
+  },
+  "tool_choice": "string",
+  "tools": "array",
+  "top_logprobs": "number",
+  "top_p": "number",
+  "truncation": "string",
+  "usage": {
+    "input_tokens": "number",
+    "input_tokens_details": {
+      "cached_tokens": "number"
+    },
+    "output_tokens": "number",
+    "output_tokens_details": {
+      "reasoning_tokens": "number"
+    },
+    "total_tokens": "number"
+  },
+  "user": "null|string|object",
+  "metadata": "object"
+}

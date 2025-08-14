@@ -1,0 +1,9 @@
+1. Add logging for LLM actions
+2. Add openai agent
+3. balancer function to rebalance expenses after adding a payment or expense
+4. schedule functionality
+5. descriptive returns for AiAgentTools for errors
+6. hide PII so I can actually put this in a public repo
+7. allow support for multiple group chats
+8. Dashboard?
+9. fix message retrieval. right now messages with linebreaks break the system

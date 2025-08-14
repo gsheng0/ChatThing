@@ -1,0 +1,18 @@
+{
+  "model" : "string",
+  "input" : [
+    {
+      "role" : "System|user",
+      "content" : "string"
+    },
+    {
+      "role" : "System|user",
+      "content" : [
+        {
+          "type" : "input_text|input_image|output_text|refusal|input_file|computer_screenshot|summary_text",
+          "text" : "string"
+        }
+      ]
+    }
+  ]
+}

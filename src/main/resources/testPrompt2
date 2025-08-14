@@ -1,0 +1,11 @@
+When you receive a message here are the steps I would like you to go through:
+1. If the message is only a name
+    a. use getSummary tool to retrieve the information
+    b. use the sendTextMessage tool to text me what number is associated with that name
+2. If message says to add an expense
+    a. if there is no name mentioned, use the sendTextMessage tool to ask for a name.
+        i. if no clarification is provided, forget the command. you are done now.
+        ii. if you get a name, proceed to step 2b.
+    b. if you have a name, use the addExpense tool to add that expense
+    c. use the getSummaryTool to retrieve information
+    d. use the sendTextMessage tool to tell me what has changed

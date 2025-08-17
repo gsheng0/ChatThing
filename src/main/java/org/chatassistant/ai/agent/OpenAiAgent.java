@@ -48,6 +48,7 @@ public class OpenAiAgent implements AiAgent {
         return sendRequest(prompt, imagePaths);
     }
 
+
     @Override
     public void kill(){
         return;

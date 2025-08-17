@@ -1,0 +1,51 @@
+package org.chatassistant.thread;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.concurrent.BlockingDeque;
+
+@Component
+public class LoggingTask implements Runnable {
+    private final BlockingDeque<String> loggingQueue;
+    private static final String outputPath = "/Users/georgesheng/proj/scheduler2/logs/";
+    private final File outputFile;
+    private final FileOutputStream fileOutputStream;
+
+    @Autowired
+    public LoggingTask(final BlockingDeque<String> loggingQueue) {
+        this.loggingQueue = loggingQueue;
+        outputFile = new File(outputPath + Calendar.getInstance().getTime());
+        try{
+            fileOutputStream = new FileOutputStream(outputFile);
+        } catch(final Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void run(){
+        System.out.println("Logging thread started");
+        while(true){
+            while(!loggingQueue.isEmpty()){
+                try {
+                    fileOutputStream.write(loggingQueue.pollFirst().getBytes());
+                    fileOutputStream.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                fileOutputStream.getFD().sync();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+}

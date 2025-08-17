@@ -13,10 +13,8 @@ public interface AiAgent {
     String ask(String prompt, List<String> imagePaths);
     void kill();
 
-
-
-    public static List<Method> getAllTools(){
-        final Reflections reflections = new Reflections("org.scheduler.ai.tools");
+    static List<Method> getAllTools(){
+        final Reflections reflections = new Reflections("org.chatassistant.ai.tools");
         final Set<Class<? extends AiAgentTool>> tools = reflections.getSubTypesOf(AiAgentTool.class);
         final List<Method> methods = new ArrayList<>();
 

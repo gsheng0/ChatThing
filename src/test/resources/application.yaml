@@ -1,0 +1,3 @@
+agent:
+  prompt-path:
+    src/main/resources/testPrompt3

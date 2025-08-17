@@ -107,8 +107,4 @@ public class GoogleSheets {
         final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
-
-    public static void main(String[] args){
-        GoogleSheets sheets = GoogleSheets.getInstance();
-    }
 }

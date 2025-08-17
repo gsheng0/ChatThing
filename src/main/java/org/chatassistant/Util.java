@@ -55,6 +55,7 @@ public class Util {
             throw new RuntimeException(e);
         }
     }
+
     public static byte[] convertHeicToJpeg(byte[] heicBytes) {
         if (heicBytes == null || heicBytes.length == 0) {
             throw new IllegalArgumentException("Input HEIC bytes cannot be null or empty.");
@@ -85,6 +86,5 @@ public class Util {
             }
         }
     }
-
 //    public static native byte[] convertHeicBytesToJpegBytes(byte[] heicData);
 }

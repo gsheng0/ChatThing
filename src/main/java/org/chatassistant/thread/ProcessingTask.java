@@ -3,20 +3,31 @@ package org.chatassistant.thread;
 import org.chatassistant.ai.agent.AiAgent;
 import org.chatassistant.ai.agent.GeminiAgent;
 import org.chatassistant.entities.Message;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 
+@Component
 public class ProcessingTask implements Runnable {
-    private BlockingDeque<List<Message>> messageDeque;
-    private boolean running;
-    private final AiAgent agent;
+    private final BlockingDeque<List<Message>> messageDeque;
+    private volatile boolean running;
 
-    public ProcessingTask(BlockingDeque<List<Message>> messageDeque, AiAgent geminiAgent) {
+    private final AiAgent chatAssistantAgent;
+    private final AiAgent imageParserAgent;
+
+    @Autowired
+    public ProcessingTask(
+            final BlockingDeque<List<Message>> messageDeque,
+            @Qualifier("chatAssistantAgent") final AiAgent chatAssistantAgent,
+            @Qualifier("imageParserAgent") final AiAgent imageParserAgent) {
         this.messageDeque = messageDeque;
         this.running = true;
-        this.agent = geminiAgent;
+        this.chatAssistantAgent = chatAssistantAgent;
+        this.imageParserAgent = imageParserAgent;
     }
 
     @Override
@@ -28,7 +39,7 @@ public class ProcessingTask implements Runnable {
                     Thread.sleep(1000);
                     continue;
                 }
-                final List<Message> messages = messageDeque.pollLast();
+                final List<Message> messages = messageDeque.pollFirst();
                 final List<String> imagePaths = new ArrayList<>();
                 final StringBuilder builder = new StringBuilder();
                 for(Message message : messages){
@@ -43,13 +54,13 @@ public class ProcessingTask implements Runnable {
                     }
                 }
                 if(!imagePaths.isEmpty()){
-                    String receiptResponse = GeminiAgent.getInstance().ask("", imagePaths);
+                    String receiptResponse = imageParserAgent.ask("", imagePaths);
                     if(!receiptResponse.isEmpty()){
                         builder.append(receiptResponse).append("\n");
                     }
                 }
                 if(!builder.isEmpty()){
-                    String response = agent.ask(builder.toString());
+                    String response = chatAssistantAgent.ask(builder.toString());
                     System.out.println("Asked " + builder);
                     System.out.println("Responed: " + response);
                 }

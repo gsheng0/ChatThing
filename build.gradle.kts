@@ -1,6 +1,8 @@
 plugins {
     id("java")
     id("application")
+    id("org.springframework.boot") version "3.5.4" // or your version
+    id("io.spring.dependency-management") version "1.1.5"
 }
 
 group = "org.example"
@@ -14,7 +16,6 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("org.xerial:sqlite-jdbc:3.45.2.0")
-    implementation("org.slf4j:slf4j-simple:2.0.9")
     implementation("black.ninia:jep:4.2.0")
     implementation("com.google.genai:google-genai:1.1.0")
     implementation("org.reflections:reflections:0.10.2")
@@ -23,7 +24,12 @@ dependencies {
     implementation("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
     implementation("com.openai:openai-java:3.0.1")
     implementation("org.im4java:im4java:1.4.0")
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    implementation("org.springframework.boot:spring-boot-starter")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+    testCompileOnly("org.projectlombok:lombok:1.18.38")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.38")
 }
 
 tasks.test {

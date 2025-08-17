@@ -5,35 +5,32 @@ import com.google.genai.Client;
 import com.google.genai.types.*;
 import org.chatassistant.Main;
 import org.chatassistant.Util;
+import org.chatassistant.config.AiAgentConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component("chatAssistantAgent")
 public class AgenticGeminiAgent implements AiAgent {
-    private static final String MODEL_NAME = "gemini-2.0-flash";
-
-    private static AgenticGeminiAgent instance;
-    public static AgenticGeminiAgent getInstance(){
-        if(instance == null){
-            instance = new AgenticGeminiAgent();
-        }
-        return instance;
-    }
-
     private final Chat chat;
     private final Client client;
-    private AgenticGeminiAgent(){
+
+    @Autowired
+    public AgenticGeminiAgent(final AiAgentConfig aiAgentConfig){
         client = new Client();
-        this.chat = client.chats.create(MODEL_NAME, getConfig());
+        this.chat = client.chats.create(aiAgentConfig.getModelName(), getConfig(Util.readFile(aiAgentConfig.getPromptPath())));
     }
 
-    private GenerateContentConfig getConfig(){
+    private GenerateContentConfig getConfig(final String prompt){
         return GenerateContentConfig.builder()
                 .tools(List.of(
                         Tool.builder().functions(AiAgent.getAllTools()).build()))
-                .systemInstruction(Content.fromParts(Part.fromText(Util.readFile(Main.PROMPT))))
+                .systemInstruction(Content.fromParts(Part.fromText(prompt)))
                 .build();
     }
 
@@ -70,9 +67,5 @@ public class AgenticGeminiAgent implements AiAgent {
         } catch(Exception e){
             throw new RuntimeException(e);
         }
-    }
-    public static void main(String[] args){
-        AgenticGeminiAgent agent = AgenticGeminiAgent.getInstance();
-        System.out.println(agent.ask("tell me about the different goat candidates for starcraft 2 and the stains on each case"));
     }
 }

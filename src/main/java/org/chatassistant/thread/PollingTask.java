@@ -2,6 +2,8 @@ package org.chatassistant.thread;
 
 import org.chatassistant.entities.Message;
 import org.chatassistant.data.MessageDB;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 
+@Component
 public class PollingTask implements Runnable {
     private static final int PASSIVE = 0;
     private static final int ACTIVE = 1;
@@ -22,7 +25,7 @@ public class PollingTask implements Runnable {
     private int counter = 5;
     private boolean running;
 
-    public PollingTask(BlockingDeque<List<Message>> messageDeque, int passivePollingSleep, int activePollingSleep) {
+    public PollingTask(final BlockingDeque<List<Message>> messageDeque, int passivePollingSleep, int activePollingSleep) {
         messageDB = MessageDB.getInstance();
         this.messageSet = new HashSet<>(messageDB.getRecentMessages());
         this.messageDeque = messageDeque;
@@ -30,7 +33,8 @@ public class PollingTask implements Runnable {
         this.running = true;
     }
 
-    public PollingTask(BlockingDeque<List<Message>> messageDeque) {
+    @Autowired
+    public PollingTask(final BlockingDeque<List<Message>> messageDeque) {
         this(messageDeque, 5, 1);
     }
 
@@ -44,7 +48,7 @@ public class PollingTask implements Runnable {
         while (running) {
             try {
                 final List<Message> recentMessages = messageDB.getRecentMessages();
-                final List<Message> messageBatch = new ArrayList<Message>();
+                final List<Message> messageBatch = new ArrayList<>();
                 boolean newMessages = false;
                 for(final Message message : recentMessages) {
                     if(messageSet.contains(message) || message.getText().startsWith("[Intern]:")){
@@ -57,7 +61,7 @@ public class PollingTask implements Runnable {
                     System.out.println(message);
                 }
                 if(newMessages){
-                    messageDeque.addFirst(messageBatch);
+                    messageDeque.addLast(messageBatch);
                 }
 
                 if(newMessages) {

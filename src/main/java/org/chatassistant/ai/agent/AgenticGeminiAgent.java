@@ -3,12 +3,10 @@ package org.chatassistant.ai.agent;
 import com.google.genai.Chat;
 import com.google.genai.Client;
 import com.google.genai.types.*;
-import org.chatassistant.Main;
 import org.chatassistant.Util;
-import org.chatassistant.config.AiAgentConfig;
+import org.chatassistant.config.AiAgentConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,15 +19,20 @@ public class AgenticGeminiAgent implements AiAgent {
     private final Client client;
 
     @Autowired
-    public AgenticGeminiAgent(final AiAgentConfig aiAgentConfig){
+    public AgenticGeminiAgent(final AiAgentConfigurationProperties aiAgentConfig){
         client = new Client();
-        this.chat = client.chats.create(aiAgentConfig.getModelName(), getConfig(Util.readFile(aiAgentConfig.getPromptPath())));
+        this.chat = client.chats.create(
+            aiAgentConfig.getModelName(),
+            getConfig(
+                Util.readFile(aiAgentConfig.getPromptPath()),
+                aiAgentConfig.isRealToolSet()
+            ));
     }
 
-    private GenerateContentConfig getConfig(final String prompt){
+    private GenerateContentConfig getConfig(final String prompt, final boolean realTools){
         return GenerateContentConfig.builder()
                 .tools(List.of(
-                        Tool.builder().functions(AiAgent.getAllTools()).build()))
+                        Tool.builder().functions(AiAgent.getAllTools(realTools)).build()))
                 .systemInstruction(Content.fromParts(Part.fromText(prompt)))
                 .build();
     }

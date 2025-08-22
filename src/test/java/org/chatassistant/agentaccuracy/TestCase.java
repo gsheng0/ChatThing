@@ -5,58 +5,50 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.chatassistant.GoogleSheets;
 import org.chatassistant.Logger;
-import org.chatassistant.ai.agent.AgenticGeminiAgent;
 import org.chatassistant.ai.agent.AiAgent;
-import org.chatassistant.config.AiAgentConfig;
+import org.chatassistant.ai.tools.test.TestContextHolder;
 import org.chatassistant.data.Receipt;
-import org.checkerframework.checker.units.qual.A;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+@Setter
+@Getter
 @SuperBuilder(toBuilder = true)
 public class TestCase {
-    @Setter
-    @Getter
     private String name;
-
-    @Setter
-    @Getter
     private Receipt receipt;
-
-    @Setter
-    @Getter
     private List<String> messages;
-
-    @Setter
-    @Getter
-    private double[] expectedValues;
+    private Map<String, Double> expectedValues;
+    private AiAgent aiAgent;
 
     private static final Logger logger = Logger.of(TestCase.class);
 
     public void run(){
-        final GoogleSheets sheets = GoogleSheets.getInstance();
-        AgenticGeminiAgent agent = new AgenticGeminiAgent(new AiAgentConfig());
         logger.log("Testing case {} with prompt {}", name, receipt.getName());
+        aiAgent.ask(receipt.getReceipt());
         for(final String message : messages){
             logger.log("Actor asked: {}", message);
-            logger.log("Agent responded: {}", agent.ask(message));
+            logger.log("Agent responded: {}", aiAgent.ask(message));
         }
 
-        final String[] actualState = sheets.getCellRange(GoogleSheets.EXPENSE_SHEET, "A2:G2")[0];
-        boolean equal = true;
-        for(int i = 0; i < actualState.length; i++){
-            final double actualValue = Double.parseDouble(actualState[i]);
-            if(actualValue != expectedValues[i]){
-                equal = false;
-                break;
+        final Map<String, Double> actualValues = TestContextHolder.ledger;
+        boolean equal = actualValues.size() == expectedValues.size();
+        if(equal){
+            for(final String name : expectedValues.keySet()){
+                if(!actualValues.containsKey(name) || !actualValues.get(name.toLowerCase()).equals(expectedValues.get(name))){
+                    equal = false;
+                    break;
+                }
             }
         }
+
 
         if(equal){
             logger.log("Test Passed!");
         } else{
-            logger.log("Test Failed! Expected: {}, Found: {}", Arrays.toString(expectedValues), Arrays.toString(actualState));
+            logger.log("Test Failed! Expected: {}, Found: {}", expectedValues, actualValues);
         }
     }
 }

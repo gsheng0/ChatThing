@@ -20,7 +20,6 @@ public class Main {
     public static final String PROMPT = NORMAL_PROMPT_PATH3;
 
     public static void main(String[] args) {
-        System.out.println(AiAgent.getAllTools().size());
         SpringApplication.run(Main.class, args);
     }
 }

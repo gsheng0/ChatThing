@@ -1,11 +1,17 @@
 package org.chatassistant.ai.tools;
 
 import org.chatassistant.GoogleSheets;
+import org.chatassistant.Logger;
+import org.chatassistant.ai.tools.annotation.AiAgentTool;
 import org.chatassistant.data.Contact;
 
-public class RecordExpense implements AiAgentTool {
+import java.util.Map;
+
+@AiAgentTool
+public class RecordExpense {
     private static final GoogleSheets SHEETS = GoogleSheets.getInstance();
     private static final Contact CONTACT = Contact.getInstance();
+    private static final Logger LOGGER = Logger.of(RecordExpense.class);
 
     /**
      *

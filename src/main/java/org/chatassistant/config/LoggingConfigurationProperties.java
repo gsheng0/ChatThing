@@ -5,11 +5,10 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Component
-@ConfigurationProperties("agent")
 @Setter
 @Getter
-public class AiAgentConfig {
-    private String promptPath;
-    private String modelName;
+@Component
+@ConfigurationProperties("logger")
+public class LoggingConfigurationProperties {
+    private String outputFolder;
 }

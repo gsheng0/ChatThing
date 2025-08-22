@@ -91,7 +91,7 @@ public class OpenAiAgent implements AiAgent {
                     .set("content", contentArray));
 
             // Add tools as function definitions
-            ArrayNode toolsNode = buildToolsArray();
+            ArrayNode toolsNode = buildToolsArray(true);
 
             ObjectNode body = mapper.createObjectNode();
             body.put("model", MODEL_NAME);
@@ -128,8 +128,8 @@ public class OpenAiAgent implements AiAgent {
         return Files.readString(Path.of(path));
     }
 
-    private ArrayNode buildToolsArray() {
-        List<Method> methods = AiAgent.getAllTools();
+    private ArrayNode buildToolsArray(final boolean realTools) {
+        List<Method> methods = AiAgent.getAllTools(realTools);
         ArrayNode toolsArray = mapper.createArrayNode();
 
         for (Method method : methods) {

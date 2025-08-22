@@ -1,5 +1,6 @@
 package org.chatassistant.thread;
 
+import org.chatassistant.config.LoggingConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,14 +13,14 @@ import java.util.concurrent.BlockingDeque;
 @Component
 public class LoggingTask implements Runnable {
     private final BlockingDeque<String> loggingQueue;
-    private static final String outputPath = "/Users/georgesheng/proj/scheduler2/logs/";
+    private static final String OUTPUT_PATH = "/Users/georgesheng/proj/scheduler2/logs/";
     private final File outputFile;
     private final FileOutputStream fileOutputStream;
 
     @Autowired
-    public LoggingTask(final BlockingDeque<String> loggingQueue) {
+    public LoggingTask(final LoggingConfigurationProperties loggingConfigurationProperties, final BlockingDeque<String> loggingQueue) {
         this.loggingQueue = loggingQueue;
-        outputFile = new File(outputPath + Calendar.getInstance().getTime());
+        outputFile = new File(OUTPUT_PATH + loggingConfigurationProperties.getOutputFolder() + "/"  + Calendar.getInstance().getTime());
         try{
             fileOutputStream = new FileOutputStream(outputFile);
         } catch(final Exception e){
@@ -34,6 +35,7 @@ public class LoggingTask implements Runnable {
             while(!loggingQueue.isEmpty()){
                 try {
                     fileOutputStream.write(loggingQueue.pollFirst().getBytes());
+                    fileOutputStream.write("\n".getBytes());
                     fileOutputStream.flush();
                 } catch (IOException e) {
                     e.printStackTrace();

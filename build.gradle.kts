@@ -30,6 +30,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.38")
     testCompileOnly("org.projectlombok:lombok:1.18.38")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.38")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 tasks.test {

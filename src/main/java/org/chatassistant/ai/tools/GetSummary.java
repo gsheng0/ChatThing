@@ -1,12 +1,14 @@
 package org.chatassistant.ai.tools;
 
 import org.chatassistant.GoogleSheets;
+import org.chatassistant.ai.tools.annotation.AiAgentTool;
 import org.chatassistant.data.Contact;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetSummary implements AiAgentTool {
+@AiAgentTool
+public class GetSummary {
     private static final GoogleSheets SHEETS = GoogleSheets.getInstance();
     private static final Contact CONTACT = Contact.getInstance();
 
@@ -23,4 +25,5 @@ public class GetSummary implements AiAgentTool {
         }
         return summary;
     }
+
 }

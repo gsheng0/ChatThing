@@ -12,6 +12,7 @@ RULES:
    - Updates to group expenses
    - Your thought process about any of your actions
    All other messages are ignored: you say and do nothing.
+5. All names are valid unless if you receive an error when trying to use it in a tool call. If that happens, ask for a correction to the spelling of the name
 
 TOOLS:
 

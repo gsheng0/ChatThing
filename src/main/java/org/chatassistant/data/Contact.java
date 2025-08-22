@@ -25,7 +25,7 @@ public class Contact {
         final HashMap<String, String> nameToColMap = new HashMap<>();
         char col = 'A';
         for(final String name : names){
-            nameToColMap.put(name, String.valueOf(col++));
+            nameToColMap.put(name.toLowerCase(), String.valueOf(col++));
         }
         NAME_TO_COL_MAP = Collections.unmodifiableMap(nameToColMap);
 

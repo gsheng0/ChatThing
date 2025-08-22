@@ -1,11 +1,8 @@
 package org.chatassistant;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
 import java.util.concurrent.BlockingDeque;
+import java.util.regex.Matcher;
 
 public class Logger {
     private static final Calendar CALENDAR = Calendar.getInstance();
@@ -40,14 +37,14 @@ public class Logger {
         _log(string);
     }
 
-    public void log(final String string, String... args){
+    public void log(final String string, Object... args){
         String formatted = string;
-        for(final String arg : args){
+        for(final Object arg : args){
             int index = formatted.indexOf("{}");
             if(index == -1){
                 break;
             }
-            formatted = formatted.replaceFirst("\\{}", arg);
+            formatted = formatted.replaceFirst("\\{\\}", Matcher.quoteReplacement(arg.toString()));
         }
         log(formatted);
     }

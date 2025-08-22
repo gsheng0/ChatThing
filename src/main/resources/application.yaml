@@ -3,3 +3,5 @@ agent:
     src/main/resources/expenseTrackingPrompt2
   model-name:
     gemini-2.0-flash
+  realToolSet:
+    true

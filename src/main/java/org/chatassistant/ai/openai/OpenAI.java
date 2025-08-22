@@ -80,8 +80,4 @@ public class OpenAI {
             throw new RuntimeException(e);
         }
     }
-
-    public static void main(String[] args){
-        System.out.println(sendRequest("Please list out all the items with their prices on this receipt", List.of(TEST_HEIC_IMAGE_PATH)));
-    }
 }

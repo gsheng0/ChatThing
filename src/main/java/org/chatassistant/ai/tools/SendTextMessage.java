@@ -1,13 +1,16 @@
 package org.chatassistant.ai.tools;
 
+import org.chatassistant.Logger;
+import org.chatassistant.ai.tools.annotation.AiAgentTool;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-public class SendTextMessage implements AiAgentTool {
-
+@AiAgentTool
+public class SendTextMessage {
     private static final String SCRIPT_PATH = "/Users/georgesheng/proj/scheduler2/send_message_to_gc.scpt";
     private static final String GROUP_CHAT_NAME = "Sewerslide Pack";
-
+    private static final Logger LOGGER = Logger.of(SendTextMessage.class);
     /**
      * Sends a text message to the group chat with my friends
      * @param message the content of the text message to be sent

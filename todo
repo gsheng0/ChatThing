@@ -8,5 +8,7 @@
 8. Dashboard?
 ~~9. fix message retrieval. right now messages with linebreaks break the system~~
 10. add logging statements
-11. switch over to use lombok and spring
+11. ~~switch over to use lombok and spring~~
 12. finish testing stuff and make configuration easier
+    a. change tool setup to be configurable
+    b. ~~find a better solution for configuring tools. maybe interface swapping?~~

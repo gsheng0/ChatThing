@@ -1,5 +1,6 @@
 package org.chatassistant.config;
 
+import org.chatassistant.Logger;
 import org.chatassistant.entities.Message;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +10,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
 @Configuration
-public class AppConfig {
+public class Beans {
     @Bean
     public BlockingDeque<List<Message>> messageDeque(){
         return new LinkedBlockingDeque<>();
@@ -17,6 +18,8 @@ public class AppConfig {
 
     @Bean
     public BlockingDeque<String> loggingQueue(){
-        return new LinkedBlockingDeque<>();
+        final BlockingDeque<String> loggingQueue = new LinkedBlockingDeque<>();
+        Logger.setLoggingQueue(loggingQueue);
+        return loggingQueue;
     }
 }

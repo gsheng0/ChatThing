@@ -1,10 +1,12 @@
 package org.chatassistant.ai.tools;
 
+import org.chatassistant.ai.tools.annotation.AiAgentTool;
 import org.chatassistant.entities.Pair;
 
 import java.util.*;
 
-public class Settle implements AiAgentTool {
+@AiAgentTool
+public class Settle {
     /**
      * Generates a set of payments that will clear out any recorded debts if applied, aka "settling up"
      * @return a map mapping a person to a Pair of a String and a Double, representing the transactions that person needs to pay out,

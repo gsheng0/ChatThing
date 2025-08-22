@@ -1,3 +1,11 @@
 agent:
   prompt-path:
-    src/main/resources/testPrompt3
+    /Users/georgesheng/proj/scheduler2/src/main/resources/expenseTrackingPrompt2
+  model-name:
+    gemini-2.0-flash
+  real-tool-set:
+    false
+
+logger:
+  output-folder:
+    test

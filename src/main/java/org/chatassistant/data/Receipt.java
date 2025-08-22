@@ -8,8 +8,8 @@ public class Receipt {
     @Getter
     private final String name;
 
-    private Receipt(final String prompt, final String name){
-        this.receipt = prompt;
+    private Receipt(final String name, final String receipt){
+        this.receipt = receipt;
         this.name = name;
     }
 

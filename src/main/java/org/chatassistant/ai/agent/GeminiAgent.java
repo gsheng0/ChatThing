@@ -3,9 +3,8 @@ package org.chatassistant.ai.agent;
 import com.google.genai.Client;
 import com.google.genai.types.*;
 import com.google.genai.types.Tool;
-import org.chatassistant.Main;
 import org.chatassistant.Util;
-import org.chatassistant.config.AiAgentConfig;
+import org.chatassistant.config.AiAgentConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,16 +21,16 @@ public class GeminiAgent implements AiAgent {
     private final String modelName;
 
     @Autowired
-    public GeminiAgent(final AiAgentConfig aiAgentConfig){
+    public GeminiAgent(final AiAgentConfigurationProperties aiAgentConfig){
         this.modelName = aiAgentConfig.getModelName();
         client = new Client();
-        config = getConfig(aiAgentConfig.getPromptPath());
+        config = getConfig(aiAgentConfig.getPromptPath(), aiAgentConfig.isRealToolSet());
     }
 
-    private GenerateContentConfig getConfig(final String promptPath){
+    private GenerateContentConfig getConfig(final String promptPath, final boolean realTools){
         return GenerateContentConfig.builder()
                 .tools(List.of(
-                        Tool.builder().functions(AiAgent.getAllTools()).build()))
+                        Tool.builder().functions(AiAgent.getAllTools(realTools)).build()))
                 .systemInstruction(Content.fromParts(Part.fromText(Util.readFile(promptPath))))
                 .build();
     }

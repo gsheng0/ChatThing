@@ -5,3 +5,6 @@ agent:
     gemini-2.0-flash
   realToolSet:
     true
+logger:
+  output-folder:
+    dev

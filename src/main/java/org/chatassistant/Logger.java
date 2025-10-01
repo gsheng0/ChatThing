@@ -1,14 +1,16 @@
 package org.chatassistant;
 
+import org.chatassistant.entities.Pair;
+
 import java.util.Calendar;
 import java.util.concurrent.BlockingDeque;
 import java.util.regex.Matcher;
 
 public class Logger {
     private static final Calendar CALENDAR = Calendar.getInstance();
-    private static BlockingDeque<String> loggingQueue = null;
+    private static BlockingDeque<Pair<Integer, String>> loggingQueue = null;
 
-    public static void setLoggingQueue(final BlockingDeque<String> loggingQueue){
+    public static void setLoggingQueue(final BlockingDeque<Pair<Integer, String>> loggingQueue){
         if(Logger.loggingQueue != null){
             return;
         }
@@ -16,11 +18,16 @@ public class Logger {
     }
 
     private final String className;
+    private final int spec;
     public static <T> Logger of(final Class<T> clazz){
-        return new Logger(clazz.getSimpleName());
+        return new Logger(clazz.getSimpleName(), 0);
     }
-    private Logger (final String className){
+    public static <T> Logger of(final Class<T> clazz, final int spec){
+        return new Logger(clazz.getSimpleName(), spec);
+    }
+    private Logger (final String className, final int spec){
         this.className = className;
+        this.spec = spec;
     }
 
     private void _log(final String string){
@@ -30,7 +37,7 @@ public class Logger {
         builder.append(className);
         builder.append("]: ");
         builder.append(string);
-        loggingQueue.addLast(builder.toString());
+        loggingQueue.addLast(Pair.of(spec, builder.toString()));
     }
 
     public void log(final String string){

@@ -1,10 +1,12 @@
-1. Add logging for LLM actions
+~~1. Add logging for LLM actions~~
 ~~2. Add openai agent~~
 ~~3. balancer function to rebalance expenses after adding a payment or expense~~
 4. schedule functionality
 5. descriptive returns for AiAgentTools for errors
 ~~6. hide PII so I can actually put this in a public repo~~
 7. allow support for multiple group chats
+    a. Fix handling for contact info in google sheets
+    b. Manually manage context sent to gemini
 8. Dashboard?
 ~~9. fix message retrieval. right now messages with linebreaks break the system~~
 10. ~~add logging statements~~
@@ -13,3 +15,14 @@
     a. ~~change tool setup to be configurable~~
     b. ~~find a better solution for configuring tools. maybe interface swapping?~~
 13. add test logging option for easier parsing for reviewing test cases and getting statistics
+14. add logging keys, maybe rethink architecture. need different implementations of the private _log(String) method, so maybe break up into different classes?
+
+
+python script -> polling thread -> orchestrator thread -> chat specific processing thread
+
+auto scale threads as chats become active
+
+each thread has its own logging thread
+logs for each session contained in own folder
+add chat name attribute to sql query and message objects
+

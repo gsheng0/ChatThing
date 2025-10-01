@@ -2,6 +2,7 @@ package org.chatassistant.config;
 
 import org.chatassistant.Logger;
 import org.chatassistant.entities.Message;
+import org.chatassistant.entities.Pair;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,8 +18,8 @@ public class Beans {
     }
 
     @Bean
-    public BlockingDeque<String> loggingQueue(){
-        final BlockingDeque<String> loggingQueue = new LinkedBlockingDeque<>();
+    public BlockingDeque<Pair<Integer, String>> loggingQueue(){
+        final BlockingDeque<Pair<Integer, String>> loggingQueue = new LinkedBlockingDeque<>();
         Logger.setLoggingQueue(loggingQueue);
         return loggingQueue;
     }

@@ -18,8 +18,9 @@ public class RecordSplitExpenseTest {
      * @param names the names to add the split expense to
      * @return errors, if any
      */
-    public static String recordSplitExpenseTest(final double amount, final String[] names){
-        final List<String> validNames = Arrays.stream(names)
+    public static String recordSplitExpenseTest(final double amount, final String names){
+        final List<String> validNames = Arrays.stream(names.split(","))
+                .map(String::trim)
                 .filter(CONTACT.NAME_TO_COL_MAP::containsKey)
                 .map(String::toLowerCase)
                 .toList();

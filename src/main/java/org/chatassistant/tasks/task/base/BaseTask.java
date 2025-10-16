@@ -5,7 +5,7 @@ import org.chatassistant.tasks.task.Task;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class BaseTask implements Task {
-    private AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
     @Override
     public abstract void run();

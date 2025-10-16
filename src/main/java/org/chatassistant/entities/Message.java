@@ -1,12 +1,15 @@
 package org.chatassistant.entities;
 
+import lombok.Getter;
 import org.chatassistant.data.Contact;
 
+@Getter
 public class Message {
     private final String timestamp;
     private final String text;
     private final String sender;
     private final String imagePath;
+    private final String chatName;
     private static final Contact contact = Contact.getInstance();
 
     public Message(String timestamp, String text, String sender, String imagePath) {
@@ -14,22 +17,15 @@ public class Message {
         this.text = text;
         this.sender = contact.ID_TO_NAME_MAP.getOrDefault(sender, sender);
         this.imagePath = imagePath;
+        this.chatName = "[NO CHAT SPECIFIED]";
     }
 
-    public String getTimestamp() {
-        return timestamp;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public String getSender() {
-        return sender;
-    }
-
-    public String getImagePath() {
-        return imagePath;
+    public Message(final String timestamp, final String text, final String sender, final String imagePath, final String chatName){
+        this.timestamp = timestamp;
+        this.text = text;
+        this.sender = contact.ID_TO_NAME_MAP.getOrDefault(sender, sender);
+        this.imagePath = imagePath;
+        this.chatName = chatName;
     }
 
     public String toString(){

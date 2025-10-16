@@ -25,4 +25,5 @@ auto scale threads as chats become active
 each thread has its own logging thread
 logs for each session contained in own folder
 add chat name attribute to sql query and message objects
-
+come up with some sort of abstraction for each thread
+    can configure threads to input and output to each other like in factorio with conveyor belts

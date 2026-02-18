@@ -17,7 +17,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("org.xerial:sqlite-jdbc:3.45.2.0")
     implementation("black.ninia:jep:4.2.0")
-    implementation("com.google.genai:google-genai:1.1.0")
+    implementation("com.google.genai:google-genai:1.39.0")
     implementation("org.reflections:reflections:0.10.2")
     implementation("com.google.api-client:google-api-client:2.0.0")
     implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")

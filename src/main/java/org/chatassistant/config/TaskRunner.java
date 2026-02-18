@@ -27,7 +27,7 @@ public class TaskRunner {
         this.pollingTask = pollingTask;
         this.processingTask = processingTask;
         this.loggingTask = loggingTask;
-        threads = new HashMap<String, Thread>();
+        threads = new HashMap<>();
     }
 
     @PostConstruct

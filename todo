@@ -16,6 +16,9 @@
     b. ~~find a better solution for configuring tools. maybe interface swapping?~~
 13. add test logging option for easier parsing for reviewing test cases and getting statistics
 14. add logging keys, maybe rethink architecture. need different implementations of the private _log(String) method, so maybe break up into different classes?
+15. reorganize tool loop for gemini agent
+16. relocate get tools method to be separate from AiAgent class
+17. start on sub agent framework
 
 
 python script -> polling thread -> orchestrator thread -> chat specific processing thread

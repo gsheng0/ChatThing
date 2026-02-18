@@ -29,7 +29,7 @@ public class PollingTask implements Runnable {
         messageDB = MessageDB.getInstance();
         this.messageSet = new HashSet<>(messageDB.getRecentMessages());
         this.messageDeque = messageDeque;
-        sleepTimes = new int[]{passivePollingSleep, activePollingSleep};
+        sleepTimes = new int[]{ passivePollingSleep, activePollingSleep };
         this.running = true;
     }
 
@@ -41,9 +41,6 @@ public class PollingTask implements Runnable {
 
     @Override
     public void run() {
-        // --- YOUR POLLING LOGIC GOES HERE ---
-        // This thread would typically call your getRecentMessages() method
-        // and potentially add messageSet to a shared queue for processing.
         System.out.println("Polling Thread: Fetching messageSet...");
         while (running) {
             try {

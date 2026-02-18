@@ -39,4 +39,8 @@ public abstract class BaseProducerTask<T> extends BaseTask implements ProducerTa
         dequeMap.put(computeKey(consumerTask), consumerTask.inputDeque());
         return size != dequeMap.size();
     }
+
+    public ConcurrentHashMap<String, BlockingDeque<T>> getDequeMap() {
+        return dequeMap;
+    }
 }

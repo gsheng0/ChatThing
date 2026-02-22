@@ -2,8 +2,8 @@ package org.chatassistant.config;
 
 import jakarta.annotation.PostConstruct;
 import org.chatassistant.Logger;
-import org.chatassistant.ai.agent.AiAgent;
-import org.chatassistant.ai.agent.GeminiContext;
+import org.chatassistant.ai.agent.GeminiAgent;
+import org.chatassistant.ai.tools.ToolHolder;
 import org.chatassistant.context.ContextManager;
 import org.chatassistant.entities.Message;
 import org.chatassistant.task.runner.ConsumerRunner;
@@ -21,15 +21,20 @@ public class TaskRunner {
     private static final String LOG_BASE = "/Users/georgesheng/proj/scheduler2/logs/";
 
     private final MessagePollingTask pollingTask;
-    private final AiAgent<GeminiContext> agent;
+    private final TasksConfigurationProperties tasksConfig;
+    private final ToolHolder toolHolder;
     private final ContextManager contextManager;
     private final LoggingConfigurationProperties loggingConfig;
 
     @Autowired
-    public TaskRunner(final MessagePollingTask pollingTask, final AiAgent<GeminiContext> agent,
-                      final ContextManager contextManager, final LoggingConfigurationProperties loggingConfig) {
+    public TaskRunner(final MessagePollingTask pollingTask,
+                      final TasksConfigurationProperties tasksConfig,
+                      final ToolHolder toolHolder,
+                      final ContextManager contextManager,
+                      final LoggingConfigurationProperties loggingConfig) {
         this.pollingTask = pollingTask;
-        this.agent = agent;
+        this.tasksConfig = tasksConfig;
+        this.toolHolder = toolHolder;
         this.contextManager = contextManager;
         this.loggingConfig = loggingConfig;
     }
@@ -41,11 +46,24 @@ public class TaskRunner {
 
         final ProducerRunner<Message> producer = new ProducerRunner<>(pollingTask);
 
-        final ChatProcessingTask chatTask = new ChatProcessingTask(agent, contextManager, "expenses");
-        final ConsumerRunner<Message> consumer = new ConsumerRunner<>(chatTask);
-        producer.register(consumer, consumer.getIdentifier());
+        for (final TasksConfigurationProperties.ChatConfig chatConfig : tasksConfig.getChats()) {
+            for (final String capabilityName : chatConfig.getCapabilities()) {
+                final TasksConfigurationProperties.CapabilityConfig cap = tasksConfig.getCapabilities().get(capabilityName);
+                if (cap == null) {
+                    throw new IllegalArgumentException("Unknown capability: " + capabilityName);
+                }
+
+                final GeminiAgent agent = new GeminiAgent(cap.getModelName(), cap.getPromptPath(), cap.isRealToolSet(), toolHolder);
+                final ChatProcessingTask chatTask = new ChatProcessingTask(agent, contextManager, capabilityName);
+                final ConsumerRunner<Message> consumer = new ConsumerRunner<>(chatTask);
+
+                producer.register(consumer, chatConfig.getName());
+
+                final String threadName = "Consumer-" + chatConfig.getName() + "-" + capabilityName;
+                Thread.ofVirtual().name(threadName).start(consumer);
+            }
+        }
 
         Thread.ofVirtual().name("MessagePoller").start(producer);
-        Thread.ofVirtual().name("ChatProcessor").start(consumer);
     }
 }

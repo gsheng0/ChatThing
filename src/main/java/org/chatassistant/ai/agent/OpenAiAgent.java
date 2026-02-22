@@ -5,11 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.chatassistant.Main;
 import org.chatassistant.ai.tools.ToolHolder;
-import org.chatassistant.config.AiAgentConfigurationProperties;
-import org.checkerframework.checker.units.qual.C;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 import javax.tools.Tool;
 import java.io.IOException;
@@ -23,8 +18,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Base64;
 
-@Component
-@Qualifier("open_ai")
 @Deprecated
 public class OpenAiAgent implements AiAgent<Void> {
 
@@ -37,11 +30,10 @@ public class OpenAiAgent implements AiAgent<Void> {
     private final HttpClient httpClient;
     private final Map<String, Method> toolMap;
 
-    @Autowired
-    public OpenAiAgent(final AiAgentConfigurationProperties aiAgentConfig, final ToolHolder toolHolder) {
+    public OpenAiAgent(final boolean realToolSet, final ToolHolder toolHolder) {
         this.mapper = new ObjectMapper();
         this.httpClient = HttpClient.newHttpClient();
-        this.toolMap = toolHolder.getToolMap(aiAgentConfig.isRealToolSet());
+        this.toolMap = toolHolder.getToolMap(realToolSet);
     }
 
     @Override

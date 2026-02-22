@@ -7,10 +7,6 @@ import com.google.genai.types.*;
 import com.google.genai.types.Tool;
 import org.chatassistant.Util;
 import org.chatassistant.ai.tools.ToolHolder;
-import org.chatassistant.config.AiAgentConfigurationProperties;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -20,8 +16,6 @@ import java.util.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Component
-@Qualifier("gemini")
 public class GeminiAgent implements AiAgent<GeminiContext> {
     private final Client client;
     private final GenerateContentConfig config;
@@ -31,14 +25,11 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
-    @Autowired
-    public GeminiAgent(final AiAgentConfigurationProperties aiAgentConfig, final ToolHolder toolHolder){
-        this.modelName = aiAgentConfig.getModelName();
+    public GeminiAgent(final String modelName, final String promptPath, final boolean realToolSet, final ToolHolder toolHolder) {
+        this.modelName = modelName;
         this.client = new Client();
-        this.toolMap = toolHolder.getToolMap(aiAgentConfig.isRealToolSet());
-        this.config = getConfig(
-                aiAgentConfig.getPromptPath(),
-                new ArrayList<>(toolMap.values()));
+        this.toolMap = toolHolder.getToolMap(realToolSet);
+        this.config = getConfig(promptPath, new ArrayList<>(toolMap.values()));
     }
 
     private GenerateContentConfig getConfig(final String promptPath, final List<Method> tools){

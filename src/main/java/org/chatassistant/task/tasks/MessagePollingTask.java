@@ -30,6 +30,11 @@ public class MessagePollingTask implements ProducerTask<Message> {
     }
 
     @Override
+    public boolean shouldReceive(final Message message, final String topic) {
+        return topic.equals(message.getChatName());
+    }
+
+    @Override
     public List<Message> produce() {
         final List<Message> recent = messagePoller.getRecentMessages();
         final List<Message> newMessages = new ArrayList<>();

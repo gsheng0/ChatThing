@@ -1,13 +1,17 @@
-agent:
-  prompt-path:
-    src/main/resources/expenseTrackingPrompt2
-  model-name:
-    gemini-3-flash-preview
-  realToolSet:
-    true
+tasks:
+  capabilities:
+    expenses:
+      prompt-path: src/main/resources/expenseTrackingPrompt2
+      model-name: gemini-3-flash-preview
+      real-tool-set: true
+  chats:
+    - name: "My Group Chat"
+      capabilities:
+        - expenses
+
 logger:
-  output-folder:
-    dev
+  output-folder: dev
+
 context:
   storage-path: contexts/
   verbatim-chars: 10000

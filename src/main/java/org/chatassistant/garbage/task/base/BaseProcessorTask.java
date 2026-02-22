@@ -1,7 +1,7 @@
-package org.chatassistant.tasks.task.base;
+package org.chatassistant.task.base;
 
-import org.chatassistant.tasks.task.ConsumerTask;
-import org.chatassistant.tasks.task.ProcessingTask;
+import org.chatassistant.task.ConsumerTask;
+import org.chatassistant.task.ProcessingTask;
 
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
@@ -20,15 +20,17 @@ public abstract class BaseProcessorTask<A, B> extends BaseTask implements Proces
     @Override
     public void run() {
         while (isRunning()) {
-            while (!inputDeque().isEmpty()) {
-                consume(inputDeque().pollFirst());
-            }
-
-            final List<B> products = produce();
-            for (final BlockingDeque<B> deque : outputDeques) {
-                for (final B product : products) {
-                    deque.addLast(product);
+            try {
+                final A item = inputDeque().take();
+                consume(item);
+                final List<B> products = produce();
+                for (final BlockingDeque<B> deque : outputDeques) {
+                    for (final B product : products) {
+                        deque.addLast(product);
+                    }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }

@@ -1,4 +1,4 @@
-package org.chatassistant.config;
+package org.chatassistant.garbage;
 
 import org.chatassistant.Logger;
 import org.chatassistant.entities.Message;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
-@Configuration
+
 public class Beans {
     @Bean
     public BlockingDeque<List<Message>> messageDeque(){

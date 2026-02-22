@@ -1,17 +1,13 @@
-package org.chatassistant.thread;
+package org.chatassistant.garbage.thread;
 
 import org.chatassistant.entities.Message;
 import org.chatassistant.data.MessageDB;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 
-@Component
 public class PollingTask implements Runnable {
     private static final int PASSIVE = 0;
     private static final int ACTIVE = 1;
@@ -33,7 +29,6 @@ public class PollingTask implements Runnable {
         this.running = true;
     }
 
-    @Autowired
     public PollingTask(final BlockingDeque<List<Message>> messageDeque) {
         this(messageDeque, 5, 1);
     }

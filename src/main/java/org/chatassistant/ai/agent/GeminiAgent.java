@@ -6,8 +6,10 @@ import com.google.genai.Client;
 import com.google.genai.types.*;
 import com.google.genai.types.Tool;
 import org.chatassistant.Util;
+import org.chatassistant.ai.tools.ToolHolder;
 import org.chatassistant.config.AiAgentConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
@@ -18,61 +20,61 @@ import java.util.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Component("imageParserAgent")
-public class GeminiAgent implements AiAgent {
+@Component
+@Qualifier("gemini")
+public class GeminiAgent implements AiAgent<GeminiContext> {
     private final Client client;
     private final GenerateContentConfig config;
     private final String modelName;
     private final ObjectMapper om = new ObjectMapper();
+    private final Map<String, Method> toolMap;
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     @Autowired
-    public GeminiAgent(final AiAgentConfigurationProperties aiAgentConfig){
+    public GeminiAgent(final AiAgentConfigurationProperties aiAgentConfig, final ToolHolder toolHolder){
         this.modelName = aiAgentConfig.getModelName();
-        client = new Client();
-        config = getConfig(aiAgentConfig.getPromptPath(), aiAgentConfig.isRealToolSet());
+        this.client = new Client();
+        this.toolMap = toolHolder.getToolMap(aiAgentConfig.isRealToolSet());
+        this.config = getConfig(
+                aiAgentConfig.getPromptPath(),
+                new ArrayList<>(toolMap.values()));
     }
 
-    private GenerateContentConfig getConfig(final String promptPath, final boolean realTools){
+    private GenerateContentConfig getConfig(final String promptPath, final List<Method> tools){
         return GenerateContentConfig.builder()
                 .tools(List.of(
-                        Tool.builder().functions(AiAgent.getAllTools(realTools)).build()))
+                        Tool.builder().functions(tools).build()))
                 .systemInstruction(Content.fromParts(Part.fromText(Util.readFile(promptPath))))
                 .build();
     }
 
     @Override
-    public String ask(final String prompt) {
-        return ask(prompt, List.of());
+    public String ask(final GeminiContext context, final String prompt) {
+        return ask(context, prompt, List.of());
     }
 
     @Override
-    public String ask(final String prompt, final List<String> imagePaths) {
-        final List<Content> turn = new ArrayList<>();
+    public String ask(final GeminiContext context, final String prompt, final List<String> imagePaths) {
+        final List<Content> history = context.getHistory();
         final List<Part> parts = new ArrayList<>(List.of(Part.fromText(prompt)));
+        System.out.println("HERE:" + prompt.substring(0, Math.min(prompt.length(), 100)));
 
         for(String imagePath : imagePaths){
             parts.add(imagePartOf(imagePath));
         }
 
-        turn.add(Content.builder()
+        history.add(Content.builder()
                 .role("user")
                 .parts(parts)
                 .build());
 
         while (true) {
-            final GenerateContentResponse resp = client.models.generateContent(modelName, turn, config);
+            final GenerateContentResponse resp = client.models.generateContent(modelName, history, config);
 
             final Content modelContent = resp.candidates().orElseThrow(() -> new RuntimeException("Missing response candidates"))
                     .getFirst().content().orElseThrow(() -> new RuntimeException("Missing content in response candidate"));
-            turn.add(modelContent);
-//            for (Part p : modelContent.parts().orElse(List.of())) {
-//                if (p.functionCall().isPresent()) {
-//                    System.out.println("FC=" + p.functionCall().get().name().orElse("?")
-//                            + " thoughtSignature=" + p.thoughtSignature().orElse("<MISSING>"));
-//                }
-//            }
+            history.add(modelContent);
 
             final List<Part> callParts = modelContent.parts().orElseThrow(() -> new RuntimeException("Missing parts in response")).stream()
                     .filter(p -> p.functionCall().isPresent()).toList();
@@ -88,7 +90,7 @@ public class GeminiAgent implements AiAgent {
 
                 final Map<String, Object> resultJson = invokeStaticTool(toolName, argsJson);
 
-                turn.add(Content.builder()
+                history.add(Content.builder()
                         .role("user")
                         .parts(List.of(Part.fromFunctionResponse(toolName, resultJson)))
                         .build());
@@ -110,8 +112,8 @@ public class GeminiAgent implements AiAgent {
             throw new RuntimeException(e);
         }
     }
-    public Map<String, Object> invokeStaticTool(String toolName, Map<String, Object> args) {
-        Method m = AiAgent.getToolMap(true).get(toolName);
+    private Map<String, Object> invokeStaticTool(String toolName, Map<String, Object> args) {
+        final Method m = toolMap.get(toolName);
         if (m == null) {
             return error("UNKNOWN_TOOL", "Unknown tool: " + toolName, null);
         }
@@ -128,7 +130,6 @@ public class GeminiAgent implements AiAgent {
             } else if (params.length == 1 && Map.class.isAssignableFrom(params[0])) {
                 rawResult = m.invoke(null, args == null ? Map.of() : args);
             } else if (params.length == 1 && params[0] == String.class) {
-                // optional fallback: tool expects JSON string
                 String json = om.writeValueAsString(args == null ? Map.of() : args);
                 rawResult = m.invoke(null, json);
             } else {
@@ -165,7 +166,6 @@ public class GeminiAgent implements AiAgent {
     private Object normalizeToJsonFriendly(Object raw) throws Exception {
         if (raw == null) return null;
         if (raw instanceof Map<?, ?>) {
-            // Ensure key type is String; if not, coerce via JSON round-trip.
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> m = (Map<String, Object>) raw;

@@ -1,7 +1,7 @@
-package org.chatassistant.tasks.task.base;
+package org.chatassistant.task.base;
 
-import org.chatassistant.tasks.task.ConsumerTask;
-import org.chatassistant.tasks.task.ProducerTask;
+import org.chatassistant.task.ConsumerTask;
+import org.chatassistant.task.ProducerTask;
 
 import java.util.List;
 import java.util.Map;

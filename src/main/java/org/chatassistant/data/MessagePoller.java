@@ -1,6 +1,7 @@
 package org.chatassistant.data;
 
 import org.chatassistant.entities.Message;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+@Component
 public class MessagePoller {
     private static final String DELIMITER = "````%";
     private static MessagePoller instance;
@@ -15,14 +17,7 @@ public class MessagePoller {
     private final BufferedWriter writer;
     private final BufferedReader reader;
 
-    public static MessagePoller getInstance() {
-        if(instance == null) {
-            instance = new MessagePoller();
-        }
-        return instance;
-    }
-
-    private MessagePoller() {
+    public MessagePoller() {
         final ProcessBuilder pb = new ProcessBuilder(
                 "/Users/georgesheng/proj/scheduler2/venv/bin/python3",
                 "/Users/georgesheng/proj/scheduler2/decode2.py");
@@ -44,6 +39,7 @@ public class MessagePoller {
             final String[] response =  reader.readLine().split(DELIMITER);
             final List<Message> messages = new ArrayList<>();
             for(final String line: response){
+                System.out.println(line);
                 final String entry = decodeBase64Bytes(line);
                 final String[] fields = entry.split("\\|");
                 messages.add(new Message(fields[0], fields[2] == null || fields[2].isEmpty() ? fields[3] : fields[2], fields[1], fields[4], fields[5]));

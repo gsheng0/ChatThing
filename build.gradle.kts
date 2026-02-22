@@ -47,6 +47,14 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-parameters")
 }
 
+sourceSets {
+    main {
+        java {
+            exclude("**/garbage/**")
+        }
+    }
+}
+
 application {
     mainClass = "org.scheduler.Main"
 }

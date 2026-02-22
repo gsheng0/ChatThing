@@ -4,7 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.chatassistant.Main;
+import org.chatassistant.ai.tools.ToolHolder;
+import org.chatassistant.config.AiAgentConfigurationProperties;
+import org.checkerframework.checker.units.qual.C;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
+import javax.tools.Tool;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -16,7 +23,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Base64;
 
-public class OpenAiAgent implements AiAgent {
+@Component
+@Qualifier("open_ai")
+@Deprecated
+public class OpenAiAgent implements AiAgent<Void> {
 
     private static final String MODEL_NAME = "gpt-4o"; // supports text + image
     private static final String API_KEY = System.getenv("OPENAI_API_KEY");
@@ -25,26 +35,22 @@ public class OpenAiAgent implements AiAgent {
     private static OpenAiAgent instance;
     private final ObjectMapper mapper;
     private final HttpClient httpClient;
+    private final Map<String, Method> toolMap;
 
-    private OpenAiAgent() {
+    @Autowired
+    public OpenAiAgent(final AiAgentConfigurationProperties aiAgentConfig, final ToolHolder toolHolder) {
         this.mapper = new ObjectMapper();
         this.httpClient = HttpClient.newHttpClient();
-    }
-
-    public static OpenAiAgent getInstance() {
-        if (instance == null) {
-            instance = new OpenAiAgent();
-        }
-        return instance;
+        this.toolMap = toolHolder.getToolMap(aiAgentConfig.isRealToolSet());
     }
 
     @Override
-    public String ask(String prompt) {
+    public String ask(Void c, String prompt) {
         return sendRequest(prompt, null);
     }
 
     @Override
-    public String ask(String prompt, List<String> imagePaths) {
+    public String ask(Void c, String prompt, List<String> imagePaths) {
         return sendRequest(prompt, imagePaths);
     }
 
@@ -91,7 +97,7 @@ public class OpenAiAgent implements AiAgent {
                     .set("content", contentArray));
 
             // Add tools as function definitions
-            ArrayNode toolsNode = buildToolsArray(true);
+            ArrayNode toolsNode = buildToolsArray();
 
             ObjectNode body = mapper.createObjectNode();
             body.put("model", MODEL_NAME);
@@ -128,8 +134,8 @@ public class OpenAiAgent implements AiAgent {
         return Files.readString(Path.of(path));
     }
 
-    private ArrayNode buildToolsArray(final boolean realTools) {
-        List<Method> methods = AiAgent.getAllTools(realTools);
+    private ArrayNode buildToolsArray() {
+        List<Method> methods = toolMap.values().stream().toList();
         ArrayNode toolsArray = mapper.createArrayNode();
 
         for (Method method : methods) {
@@ -139,7 +145,6 @@ public class OpenAiAgent implements AiAgent {
             functionNode.put("name", method.getName());
             functionNode.put("description", "Auto-generated tool from AiAgentTool");
 
-            // Simple example: no params metadata
             functionNode.set("parameters", mapper.createObjectNode()
                     .put("type", "object")
                     .set("properties", mapper.createObjectNode()

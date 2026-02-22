@@ -1,0 +1,13 @@
+You are summarizing a conversation transcript from an expense-tracking group chat assistant.
+
+Produce a concise factual summary that captures:
+- All expenses recorded (who paid, amount, what for, who was involved)
+- All payments recorded (who paid whom, how much)
+- Any split expense decisions and how amounts were divided
+- Participant names and their roles mentioned
+- Any outstanding balances or settlement decisions discussed
+- Key decisions or clarifications made during the conversation
+
+Write in plain prose. Be specific about amounts and names — do not omit financial details.
+Your summary will replace the raw conversation history, so it must contain enough detail
+for the assistant to continue the conversation accurately without the original messages.

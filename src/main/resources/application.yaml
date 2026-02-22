@@ -8,3 +8,8 @@ agent:
 logger:
   output-folder:
     dev
+context:
+  storage-path: contexts/
+  verbatim-chars: 10000
+  summarization-model: gemini-2.0-flash
+  summarization-prompt-path: src/main/resources/summarizationPrompt

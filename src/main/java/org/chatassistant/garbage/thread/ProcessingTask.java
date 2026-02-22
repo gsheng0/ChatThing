@@ -1,29 +1,24 @@
-package org.chatassistant.thread;
+package org.chatassistant.garbage.thread;
 
 import org.chatassistant.ai.agent.AiAgent;
-import org.chatassistant.ai.agent.GeminiAgent;
+import org.chatassistant.ai.agent.GeminiContext;
 import org.chatassistant.entities.Message;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 
-@Component
 public class ProcessingTask implements Runnable {
     private final BlockingDeque<List<Message>> messageDeque;
     private volatile boolean running;
 
-    private final AiAgent chatAssistantAgent;
-    private final AiAgent imageParserAgent;
+    private final AiAgent<Void> chatAssistantAgent;
+    private final AiAgent<GeminiContext> imageParserAgent;
 
-    @Autowired
     public ProcessingTask(
             final BlockingDeque<List<Message>> messageDeque,
-            @Qualifier("chatAssistantAgent") final AiAgent chatAssistantAgent,
-            @Qualifier("imageParserAgent") final AiAgent imageParserAgent) {
+            final AiAgent<Void> chatAssistantAgent,
+            final AiAgent<GeminiContext> imageParserAgent) {
         this.messageDeque = messageDeque;
         this.running = true;
         this.chatAssistantAgent = chatAssistantAgent;
@@ -54,13 +49,13 @@ public class ProcessingTask implements Runnable {
                     }
                 }
                 if(!imagePaths.isEmpty()){
-                    String receiptResponse = imageParserAgent.ask("", imagePaths);
+                    String receiptResponse = imageParserAgent.ask(new GeminiContext(), "", imagePaths);
                     if(!receiptResponse.isEmpty()){
                         builder.append(receiptResponse).append("\n");
                     }
                 }
                 if(!builder.isEmpty()){
-                    String response = chatAssistantAgent.ask(builder.toString());
+                    String response = chatAssistantAgent.ask(null, builder.toString());
                     System.out.println("Asked " + builder);
                     System.out.println("Responed: " + response);
                 }

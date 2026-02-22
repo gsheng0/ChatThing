@@ -1,50 +1,56 @@
-package org.chatassistant.ai.agent;
+package org.chatassistant.garbage;
 
 import com.google.genai.Chat;
 import com.google.genai.Client;
 import com.google.genai.types.*;
 import org.chatassistant.Util;
+import org.chatassistant.ai.tools.ToolHolder;
 import org.chatassistant.config.AiAgentConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-@Component("chatAssistantAgent")
-public class AgenticGeminiAgent implements AiAgent {
+@Deprecated
+("chatAssistantAgent")
+public class AgenticGeminiAgent implements AiAgent<Void> {
     private final Chat chat;
     private final Client client;
+    private final Map<String, Method> toolMap;
 
-    @Autowired
-    public AgenticGeminiAgent(final AiAgentConfigurationProperties aiAgentConfig){
+    
+    public AgenticGeminiAgent(final AiAgentConfigurationProperties aiAgentConfig, final ToolHolder toolHolder) {
         client = new Client();
+        this.toolMap = toolHolder.getToolMap(aiAgentConfig.isRealToolSet());
         this.chat = client.chats.create(
             aiAgentConfig.getModelName(),
             getConfig(
                 Util.readFile(aiAgentConfig.getPromptPath()),
-                aiAgentConfig.isRealToolSet()
+                new ArrayList<>(toolMap.values())
             ));
     }
 
-    private GenerateContentConfig getConfig(final String prompt, final boolean realTools){
+    private GenerateContentConfig getConfig(final String prompt, final List<Method> tools){
         return GenerateContentConfig.builder()
                 .tools(List.of(
-                        Tool.builder().functions(AiAgent.getAllTools(realTools)).build()))
+                        Tool.builder().functions(tools).build()))
                 .systemInstruction(Content.fromParts(Part.fromText(prompt)))
                 .build();
     }
 
     @Override
-    public String ask(String prompt) {
+    public String ask(Void context, String prompt) {
         final GenerateContentResponse response = chat.sendMessage(prompt);
         return response.text();
     }
 
     @Override
-    public String ask(String prompt, List<String> imagePaths) {
+    public String ask(Void context, String prompt, List<String> imagePaths) {
         final List<Part> parts = new ArrayList<>(List.of(Part.fromText(prompt)));
         for(final String imagePath : imagePaths){
             parts.add(imagePartOf(imagePath));

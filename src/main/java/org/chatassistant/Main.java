@@ -1,13 +1,10 @@
 package org.chatassistant;
 
-import org.chatassistant.ai.agent.AiAgent;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
 
-//Negative amounts in spreadsheet means that person should send that money
-//Positive amounts means that person should receive that money
-@EnableAsync
+// Negative amounts in spreadsheet = that person should send money
+// Positive amounts = that person should receive money
 @SpringBootApplication
 public class Main {
     public static final String TEST_PROMPT_PATH = "/Users/georgesheng/proj/scheduler2/src/main/resources/testPrompt";

@@ -1,6 +1,6 @@
-package org.chatassistant.tasks.task.base;
+package org.chatassistant.task.base;
 
-import org.chatassistant.tasks.task.Task;
+import org.chatassistant.task.Task;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

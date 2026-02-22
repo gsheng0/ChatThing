@@ -21,16 +21,16 @@ public class TestCase {
     private Receipt receipt;
     private List<String> messages;
     private Map<String, Double> expectedValues;
-    private AiAgent aiAgent;
+    private AiAgent<Void> aiAgent;
 
     private static final Logger logger = Logger.of(TestCase.class);
 
     public void run(){
         logger.log("Testing case {} with prompt {}", name, receipt.getName());
-        aiAgent.ask(receipt.getReceipt());
+        aiAgent.ask(null, receipt.getReceipt());
         for(final String message : messages){
             logger.log("Actor asked: {}", message);
-            logger.log("Agent responded: {}", aiAgent.ask(message));
+            logger.log("Agent responded: {}", aiAgent.ask(null, message));
         }
 
         final Map<String, Double> actualValues = TestContextHolder.ledger;

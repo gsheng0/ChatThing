@@ -1,6 +1,6 @@
-package org.chatassistant.tasks.task.base;
+package org.chatassistant.task.base;
 
-import org.chatassistant.tasks.task.ConsumerTask;
+import org.chatassistant.task.ConsumerTask;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -20,8 +20,10 @@ public abstract class BaseConsumerTask<T> extends BaseTask implements ConsumerTa
     @Override
     public final void run() {
         while (isRunning()) {
-            while (!inputDeque.isEmpty()) {
-                consume(inputDeque.pollFirst());
+            try {
+                consume(inputDeque.take());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }

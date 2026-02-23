@@ -7,10 +7,10 @@ import com.google.genai.types.*;
 import com.google.genai.types.Tool;
 import org.chatassistant.Util;
 import org.chatassistant.ai.tools.ToolHolder;
+import org.chatassistant.ai.tools.ToolHolder.InvocableMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 import java.nio.file.Files;
@@ -21,7 +21,7 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
     private final GenerateContentConfig config;
     private final String modelName;
     private final ObjectMapper om = new ObjectMapper();
-    private final Map<String, Method> toolMap;
+    private final Map<String, InvocableMethod> toolMap;
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
@@ -29,10 +29,11 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
         this.modelName = modelName;
         this.client = new Client();
         this.toolMap = toolHolder.getToolMap(realToolSet);
-        this.config = getConfig(promptPath, new ArrayList<>(toolMap.values()));
+        final List<Method> methods = toolMap.values().stream().map(InvocableMethod::method).toList();
+        this.config = getConfig(promptPath, methods);
     }
 
-    private GenerateContentConfig getConfig(final String promptPath, final List<Method> tools){
+    private GenerateContentConfig getConfig(final String promptPath, final List<Method> tools) {
         return GenerateContentConfig.builder()
                 .tools(List.of(
                         Tool.builder().functions(tools).build()))
@@ -51,7 +52,7 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
         final List<Part> parts = new ArrayList<>(List.of(Part.fromText(prompt)));
         System.out.println("HERE:" + prompt.substring(0, Math.min(prompt.length(), 100)));
 
-        for(String imagePath : imagePaths){
+        for (String imagePath : imagePaths) {
             parts.add(imagePartOf(imagePath));
         }
 
@@ -67,7 +68,7 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
                     .getFirst().content().orElseThrow(() -> new RuntimeException("Missing content in response candidate"));
             history.add(modelContent);
 
-            final List<Part> callParts = modelContent.parts().orElseThrow(() -> new RuntimeException("Missing parts in response")).stream()
+            final List<Part> callParts = modelContent.parts().orElse(List.of()).stream()
                     .filter(p -> p.functionCall().isPresent()).toList();
 
             if (callParts.isEmpty()) {
@@ -79,7 +80,7 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
                 final String toolName = fc.name().orElse("Unknown Tool");
                 final Map<String, Object> argsJson = fc.args().orElse(Map.of());
 
-                final Map<String, Object> resultJson = invokeStaticTool(toolName, argsJson);
+                final Map<String, Object> resultJson = invokeTool(toolName, argsJson);
 
                 history.add(Content.builder()
                         .role("user")
@@ -90,39 +91,38 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
     }
 
     @Override
-    public void kill(){
+    public void kill() {
         client.close();
     }
 
-    private static Part imagePartOf(final String imagePath){
-        try{
+    private static Part imagePartOf(final String imagePath) {
+        try {
             final String extension = imagePath.substring(imagePath.lastIndexOf('.') + 1);
             final String updatedImagePath = imagePath.replace("~", "/Users/georgesheng");
             return Part.fromBytes(Files.readAllBytes(Path.of(updatedImagePath)), "image/" + extension);
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    private Map<String, Object> invokeStaticTool(String toolName, Map<String, Object> args) {
-        final Method m = toolMap.get(toolName);
-        if (m == null) {
+
+    private Map<String, Object> invokeTool(String toolName, Map<String, Object> args) {
+        final InvocableMethod invocable = toolMap.get(toolName);
+        if (invocable == null) {
             return error("UNKNOWN_TOOL", "Unknown tool: " + toolName, null);
         }
-        if (!Modifier.isStatic(m.getModifiers())) {
-            return error("INVALID_TOOL", "Tool method is not static: " + toolName, null);
-        }
 
+        final Method m = invocable.method();
         try {
             Object rawResult;
 
             Class<?>[] params = m.getParameterTypes();
             if (params.length == 0) {
-                rawResult = m.invoke(null);
+                rawResult = m.invoke(invocable.instance());
             } else if (params.length == 1 && Map.class.isAssignableFrom(params[0])) {
-                rawResult = m.invoke(null, args == null ? Map.of() : args);
+                rawResult = m.invoke(invocable.instance(), args == null ? Map.of() : args);
             } else if (params.length == 1 && params[0] == String.class) {
                 String json = om.writeValueAsString(args == null ? Map.of() : args);
-                rawResult = m.invoke(null, json);
+                rawResult = m.invoke(invocable.instance(), json);
             } else {
                 return error(
                         "UNSUPPORTED_SIGNATURE",
@@ -131,7 +131,6 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
                 );
             }
 
-            // Normalize to Map<String,Object> payload
             Object data = normalizeToJsonFriendly(rawResult);
 
             Map<String, Object> out = new LinkedHashMap<>();
@@ -167,7 +166,6 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
         }
         if (raw instanceof String) return raw;
         if (raw instanceof Number || raw instanceof Boolean) return raw;
-        // For lists/arrays/POJOs: convert into generic JSON tree (Map/List primitives)
         return om.convertValue(raw, Object.class);
     }
 

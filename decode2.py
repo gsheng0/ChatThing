@@ -15,11 +15,11 @@ class MessageEntry:
         self.sender: str = row[1] if row[1] != None else "Me"
         self.text: str = "" if row[2] == None else row[2]
         self.text_backup: str = self.extract_text(row[3])
-        self.image_path: str = row[4]
-        self.chat_name: str = row[5]
+        self.image_path: str = row[4] if row[4] != None else ""
+        self.chat_name: str = row[5] if len(row) > 5 else ""
 
     def __str__(self):
-        return f"{self.timestamp}|{self.sender}|{self.text}|{self.text_backup}|{self.image_path}"
+        return f"{self.timestamp}|{self.sender}|{self.text}|{self.text_backup}|{self.image_path}|{self.chat_name}"
 
     def __hash__(self):
         return hash(hash(self.timestamp) + hash(self.sender) + hash(self.text) + hash(self.text_backup) + hash(self.image_path))
@@ -97,8 +97,6 @@ def get_chat_ids(group_names: List[str]) -> List[int]:
 
     # Extract just the ROWID values
     chat_ids = [row[0] for row in rows]
-    print(chat_ids)
-
     conn.close()
     return chat_ids
 
@@ -159,16 +157,12 @@ def get_messages() -> List[MessageEntry]:
     new_messages = cursor.fetchall()
 
     if not new_messages:
-        return
-
-    # Process new messages
-    for msg in new_messages:
-        message_id, date, sender, text, attributed, image_path, chat_name = msg
-        print(f"[{chat_name}] {sender}: {text or '[media]'}")
+        return []
 
     # Update the last seen message timestamp
     last_seen_date = new_messages[-1][1]
-    print("LAST SEEN DATE: " + str(last_seen_date))
+
+    return [MessageEntry(row[1:]) for row in new_messages]
 
 
 for line in sys.stdin:
@@ -179,4 +173,6 @@ for line in sys.stdin:
         print()
         sys.stdout.flush()
     except Exception as e:
+        print(file=sys.stderr)
+        print()
         sys.stdout.flush()

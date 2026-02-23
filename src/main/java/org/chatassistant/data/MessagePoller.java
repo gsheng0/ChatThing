@@ -1,6 +1,7 @@
 package org.chatassistant.data;
 
 import org.chatassistant.entities.Message;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -12,18 +13,19 @@ import java.util.List;
 @Component
 public class MessagePoller {
     private static final String DELIMITER = "````%";
-    private static MessagePoller instance;
     private final Process process;
     private final BufferedWriter writer;
     private final BufferedReader reader;
+    private final Contact contact;
 
-    public MessagePoller() {
+    public MessagePoller(@Lazy final Contact contact) {
+        this.contact = contact;
         final ProcessBuilder pb = new ProcessBuilder(
                 "/Users/georgesheng/proj/scheduler2/venv/bin/python3",
                 "/Users/georgesheng/proj/scheduler2/decode2.py");
         try {
             process = pb.start();
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -32,20 +34,22 @@ public class MessagePoller {
     }
 
     public List<Message> getRecentMessages() {
-        try{
+        try {
             writer.write("\n");
             writer.flush();
 
-            final String[] response =  reader.readLine().split(DELIMITER);
+            final String[] response = reader.readLine().split(DELIMITER);
             final List<Message> messages = new ArrayList<>();
-            for(final String line: response){
-                System.out.println(line);
+            for (final String line : response) {
+                if (line.isEmpty()) continue;
                 final String entry = decodeBase64Bytes(line);
                 final String[] fields = entry.split("\\|");
-                messages.add(new Message(fields[0], fields[2] == null || fields[2].isEmpty() ? fields[3] : fields[2], fields[1], fields[4], fields[5]));
+                final String rawSender = fields[1];
+                final String resolvedSender = contact.getIdToNameMap().getOrDefault(rawSender, rawSender);
+                messages.add(new Message(fields[0], fields[2] == null || fields[2].isEmpty() ? fields[3] : fields[2], resolvedSender, fields[4], fields[5]));
             }
             return messages;
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return List.of();
         }

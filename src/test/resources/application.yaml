@@ -1,11 +1,30 @@
-agent:
-  prompt-path:
-    /Users/georgesheng/proj/scheduler2/src/main/resources/expenseTrackingPrompt2
-  model-name:
-    gemini-2.0-flash
-  real-tool-set:
-    false
+tasks:
+  capabilities:
+    expenses:
+      provider: gemini
+      prompt-path: src/main/resources/expenseTrackingPrompt2
+      model-name: gemini-2.0-flash
+      real-tool-set: false
+      chats:
+        - "Sewerslide Pack"
 
 logger:
-  output-folder:
-    test
+  output-folder: test
+
+context:
+  storage-path: contexts/
+  verbatim-chars: 10000
+  summarization-model: gemini-2.0-flash
+  summarization-prompt-path: src/main/resources/summarizationPrompt
+
+google:
+  credentials-path: src/main/resources/credentials.json
+  sheets:
+    spreadsheet-id: placeholder
+    expense-sheet: Sheet1
+    contact-sheet: ContactMap
+  calendar:
+    tokens-dir: tokens-calendar
+    oauth-port: 8889
+  tokens-dir: tokens
+  oauth-port: 8888

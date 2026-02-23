@@ -19,19 +19,15 @@ public class ContextManager {
         this.trimmer = trimmer;
     }
 
-    public GeminiContext getOrCreate(final String chat, final String capability) {
-        return contexts.computeIfAbsent(key(chat, capability), k ->
-                store.load(chat, capability).orElseGet(GeminiContext::new));
+    public GeminiContext getOrCreate(final String key) {
+        return contexts.computeIfAbsent(key, k ->
+                store.load(key).orElseGet(GeminiContext::new));
     }
 
-    public void afterTurn(final GeminiContext context, final String chat, final String capability) {
+    public void afterTurn(final GeminiContext context, final String key) {
         trimmer.trim(context).ifPresent(summary ->
-                logger.log("[{}][{}] Context trimmed. Summary: {}", chat, capability,
+                logger.log("[{}] Context trimmed. Summary: {}", key,
                         summary.substring(0, Math.min(summary.length(), 200))));
-        store.save(chat, capability, context);
-    }
-
-    private static String key(final String chat, final String capability) {
-        return chat + "|" + capability;
+        store.save(key, context);
     }
 }

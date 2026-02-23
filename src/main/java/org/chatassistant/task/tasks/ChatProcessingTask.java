@@ -1,6 +1,5 @@
 package org.chatassistant.task.tasks;
 
-import org.chatassistant.Logger;
 import org.chatassistant.ai.agent.AiAgent;
 import org.chatassistant.ai.agent.GeminiContext;
 import org.chatassistant.context.ContextManager;
@@ -11,22 +10,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatProcessingTask implements ConsumerTask<Message> {
-    private static final Logger logger = Logger.of(ChatProcessingTask.class);
-
     private final AiAgent<GeminiContext> agent;
     private final ContextManager contextManager;
     private final String capabilityName;
+    private final String contextKey;
 
     public ChatProcessingTask(final AiAgent<GeminiContext> agent, final ContextManager contextManager,
-                              final String capabilityName) {
+                              final String capabilityName, final String contextKey) {
         this.agent = agent;
         this.contextManager = contextManager;
         this.capabilityName = capabilityName;
+        this.contextKey = contextKey;
     }
 
     @Override
     public void consume(final Message message) {
-        final String chatName = message.getChatName();
         final StringBuilder prompt = new StringBuilder();
         final List<String> imagePaths = new ArrayList<>();
 
@@ -39,11 +37,9 @@ public class ChatProcessingTask implements ConsumerTask<Message> {
         }
 
         if (!prompt.isEmpty() || !imagePaths.isEmpty()) {
-            logger.log("[{}][{}] Processing: {}", chatName, capabilityName, prompt.toString().trim());
-            final GeminiContext context = contextManager.getOrCreate(chatName, capabilityName);
-            final String response = agent.ask(context, prompt.toString(), imagePaths);
-            contextManager.afterTurn(context, chatName, capabilityName);
-            logger.log("[{}][{}] Response: {}", chatName, capabilityName, response);
+            final GeminiContext context = contextManager.getOrCreate(contextKey);
+            agent.ask(context, prompt.toString(), imagePaths);
+            contextManager.afterTurn(context, contextKey);
         }
     }
 

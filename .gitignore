@@ -42,6 +42,26 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Credentials & secrets ###
 src/main/resources/credentials.json
 tokens/
+*.env
+.env*
+*secret*
+*secrets*
+*api_key*
+*apikey*
+
+### Google OAuth tokens ###
+StoredCredential
+
+### Logs ###
 logs/
+
+### Contexts (may contain chat PII) ###
+contexts/
+
+### Python ###
+venv/
+__pycache__/
+*.pyc

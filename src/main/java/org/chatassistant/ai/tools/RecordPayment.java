@@ -5,13 +5,16 @@ import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
 import org.chatassistant.data.Contact;
 
-import java.util.Map;
-
 @AiAgentTool
 public class RecordPayment {
-    private static final GoogleSheets SHEETS = GoogleSheets.getInstance();
-    private static final Contact CONTACT = Contact.getInstance();
+    private final GoogleSheets sheets;
+    private final Contact contact;
     private static final Logger LOGGER = Logger.of(RecordPayment.class);
+
+    public RecordPayment(final GoogleSheets sheets, final Contact contact) {
+        this.sheets = sheets;
+        this.contact = contact;
+    }
 
     /**
      * Records a payment on the spreadsheet
@@ -20,29 +23,29 @@ public class RecordPayment {
      * @param amount the amount paid by the sender to the receiver
      * @return errors, if any
      */
-    public static String recordPayment(String sender, String receiver, final double amount){
+    public String recordPayment(String sender, String receiver, final double amount) {
         sender = sender.toLowerCase();
         receiver = receiver.toLowerCase();
 
-        if(!CONTACT.NAME_TO_COL_MAP.containsKey(sender)){
+        if (!contact.getNameToColMap().containsKey(sender)) {
             return "Sender not recognized. Try again";
         }
 
-        if(!CONTACT.NAME_TO_COL_MAP.containsKey(receiver)){
+        if (!contact.getNameToColMap().containsKey(receiver)) {
             return "Receiver not recognized. Try again";
         }
 
         try {
-            final String senderCell = CONTACT.NAME_TO_COL_MAP.get(sender) + "2";
-            final String receiverCell = CONTACT.NAME_TO_COL_MAP.get(receiver) + "2";
-            final double senderCellAmount = Double.parseDouble(SHEETS.getCell(GoogleSheets.CONTACT_SHEET, senderCell));
-            final double receiverCellAmount = Double.parseDouble(SHEETS.getCell(GoogleSheets.CONTACT_SHEET, receiverCell));
-            SHEETS.updateExpenseCell(senderCell, Double.toString(senderCellAmount + amount));
-            SHEETS.updateExpenseCell(receiverCell, Double.toString(receiverCellAmount - amount));
-        } catch(NumberFormatException e){
+            final String senderCell = contact.getNameToColMap().get(sender) + "2";
+            final String receiverCell = contact.getNameToColMap().get(receiver) + "2";
+            final double senderCellAmount = Double.parseDouble(sheets.getCell(sheets.expenseSheet, senderCell));
+            final double receiverCellAmount = Double.parseDouble(sheets.getCell(sheets.expenseSheet, receiverCell));
+            sheets.updateExpenseCell(senderCell, Double.toString(senderCellAmount + amount));
+            sheets.updateExpenseCell(receiverCell, Double.toString(receiverCellAmount - amount));
+        } catch (NumberFormatException e) {
             e.printStackTrace();
             return "There is an error with the group chat. Use the sendTextMessage tool to notify the group chat about this error";
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return "Error updating spreadsheet. Try again.";
         }

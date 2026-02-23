@@ -1,13 +1,28 @@
+spring:
+  main:
+    keep-alive: true
+
+google:
+  credentials-path: src/main/resources/credentials.json
+  sheets:
+    spreadsheet-id: 1cn_ziMHSCvc_Xn8RWuN7yZg40VIoxBIOvGwKtzhtcJM
+    expense-sheet: Sheet1
+    contact-sheet: ContactMap
+  calendar:
+    tokens-dir: tokens-calendar
+    oauth-port: 8889
+  tokens-dir: tokens
+  oauth-port: 8888
+
 tasks:
   capabilities:
     expenses:
+      provider: claude
       prompt-path: src/main/resources/expenseTrackingPrompt2
-      model-name: gemini-3-flash-preview
+      model-name: claude-sonnet-4-6
       real-tool-set: true
-  chats:
-    - name: "My Group Chat"
-      capabilities:
-        - expenses
+      chats:
+        - "Sewerslide Pack"
 
 logger:
   output-folder: dev

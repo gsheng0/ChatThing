@@ -9,7 +9,11 @@ import java.util.Map;
 @AiAgentTestTool
 public class RecordExpenseTest {
     private static final Logger LOGGER = Logger.of(RecordExpenseTest.class);
-    private static final Contact CONTACT = Contact.getInstance();
+    private final Contact contact;
+
+    public RecordExpenseTest(final Contact contact) {
+        this.contact = contact;
+    }
 
     /**
      *
@@ -18,10 +22,10 @@ public class RecordExpenseTest {
      *               negative amount if that person owes that money
      * @return errors, if any
      */
-    public static String recordExpense(String name, final double amount){
+    public String recordExpense(String name, final double amount) {
         name = name.toLowerCase();
         LOGGER.log("Recording expense of {} for {}", amount, name);
-        if(!CONTACT.NAME_TO_COL_MAP.containsKey(name)){
+        if (!contact.getNameToColMap().containsKey(name)) {
             LOGGER.log("Name {} was not recognized", name);
             return "Name not recognized. Try again";
         }

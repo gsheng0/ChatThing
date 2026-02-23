@@ -2,7 +2,11 @@ package org.chatassistant.config;
 
 import jakarta.annotation.PostConstruct;
 import org.chatassistant.Logger;
+import org.chatassistant.ai.agent.AiAgent;
+import org.chatassistant.ai.agent.ClaudeAgent;
 import org.chatassistant.ai.agent.GeminiAgent;
+import org.chatassistant.ai.agent.GeminiContext;
+
 import org.chatassistant.ai.tools.ToolHolder;
 import org.chatassistant.context.ContextManager;
 import org.chatassistant.entities.Message;
@@ -15,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class TaskRunner {
@@ -46,22 +51,19 @@ public class TaskRunner {
 
         final ProducerRunner<Message> producer = new ProducerRunner<>(pollingTask);
 
-        for (final TasksConfigurationProperties.ChatConfig chatConfig : tasksConfig.getChats()) {
-            for (final String capabilityName : chatConfig.getCapabilities()) {
-                final TasksConfigurationProperties.CapabilityConfig cap = tasksConfig.getCapabilities().get(capabilityName);
-                if (cap == null) {
-                    throw new IllegalArgumentException("Unknown capability: " + capabilityName);
-                }
+        for (final Map.Entry<String, TasksConfigurationProperties.CapabilityConfig> entry : tasksConfig.getCapabilities().entrySet()) {
+            final String capabilityName = entry.getKey();
+            final TasksConfigurationProperties.CapabilityConfig cap = entry.getValue();
 
-                final GeminiAgent agent = new GeminiAgent(cap.getModelName(), cap.getPromptPath(), cap.isRealToolSet(), toolHolder);
-                final ChatProcessingTask chatTask = new ChatProcessingTask(agent, contextManager, capabilityName);
-                final ConsumerRunner<Message> consumer = new ConsumerRunner<>(chatTask);
+            final AiAgent<GeminiContext> agent = "claude".equalsIgnoreCase(cap.getProvider())
+                    ? new ClaudeAgent(cap.getModelName(), cap.getPromptPath(), cap.isRealToolSet(), toolHolder)
+                    : new GeminiAgent(cap.getModelName(), cap.getPromptPath(), cap.isRealToolSet(), toolHolder);
+            final ChatProcessingTask chatTask = new ChatProcessingTask(agent, contextManager, capabilityName, capabilityName);
+            final ConsumerRunner<Message> consumer = new ConsumerRunner<>(chatTask);
 
-                producer.register(consumer, chatConfig.getName());
+            producer.register(consumer, cap.getChats());
 
-                final String threadName = "Consumer-" + chatConfig.getName() + "-" + capabilityName;
-                Thread.ofVirtual().name(threadName).start(consumer);
-            }
+            Thread.ofVirtual().name("Consumer-" + capabilityName).start(consumer);
         }
 
         Thread.ofVirtual().name("MessagePoller").start(producer);

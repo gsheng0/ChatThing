@@ -3,6 +3,7 @@ package org.chatassistant.agentaccuracy;
 import org.chatassistant.Util;
 import org.chatassistant.ai.agent.AiAgent;
 import org.chatassistant.data.Receipt;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,6 +14,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
+@Disabled("Integration test requiring live Google credentials and Messages.app — run manually")
 @SpringBootTest
 public class AgentAccuracyTest {
     private static final String SCRIPT_PATH = "/Users/georgesheng/proj/scheduler2/send_message_to_gc.scpt";

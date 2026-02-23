@@ -2,33 +2,50 @@ package org.chatassistant.ai.tools;
 
 import org.chatassistant.ai.tools.annotation.AiAgentTestTool;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
-import org.reflections.Reflections;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class ToolHolder {
-    private final Map<String, Method> realToolMap;
-    private final Map<String, Method> testToolMap;
+    public record InvocableMethod(Object instance, Method method) {}
 
-    public ToolHolder() {
-        realToolMap = loadToolMap(true);
-        testToolMap = loadToolMap(false);
+    private final ApplicationContext ctx;
+    private Map<String, InvocableMethod> realToolMap;
+    private Map<String, InvocableMethod> testToolMap;
+
+    @Autowired
+    public ToolHolder(final ApplicationContext ctx) {
+        this.ctx = ctx;
     }
 
-    public Map<String, Method> getToolMap(final boolean realTools) {
-        return realTools ? realToolMap : testToolMap;
-    }
-
-    private Map<String, Method> loadToolMap(final boolean realTools) {
-        final Reflections reflections = new Reflections("org.chatassistant.ai.tools");
-        final Map<String, Method> methods = new HashMap<>();
-        Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(realTools ? AiAgentTool.class : AiAgentTestTool.class);
-        for(Class<?> clazz : annotatedClasses) {
-            Arrays.stream(clazz.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> methods.put(m.getName(), m));
+    public Map<String, InvocableMethod> getToolMap(final boolean realTools) {
+        if (realTools) {
+            if (realToolMap == null) {
+                realToolMap = loadToolMap(ctx, AiAgentTool.class);
+            }
+            return realToolMap;
+        } else {
+            if (testToolMap == null) {
+                testToolMap = loadToolMap(ctx, AiAgentTestTool.class);
+            }
+            return testToolMap;
         }
+    }
+
+    private Map<String, InvocableMethod> loadToolMap(final ApplicationContext ctx, final Class<? extends Annotation> annotation) {
+        final Map<String, InvocableMethod> methods = new HashMap<>();
+        ctx.getBeansWithAnnotation(annotation).values().forEach(bean ->
+            Arrays.stream(bean.getClass().getDeclaredMethods())
+                .filter(m -> !m.isSynthetic())
+                .forEach(m -> methods.put(m.getName(), new InvocableMethod(bean, m)))
+        );
         return methods;
     }
 }

@@ -13,47 +13,47 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import org.chatassistant.config.GoogleApiConfigurationProperties;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.util.List;
 
+@Lazy
+@Component
 public class GoogleSheets {
-    private static GoogleSheets instance;
-    public static GoogleSheets getInstance() {
-        if (instance == null) {
-            instance = new GoogleSheets();
-        }
-        return instance;
-    }
-
-    private static final String CREDENTIALS_PATH = "/Users/georgesheng/proj/scheduler2/src/main/resources/credentials.json";
-    private static final String SPREADSHEET_ID = "1cn_ziMHSCvc_Xn8RWuN7yZg40VIoxBIOvGwKtzhtcJM";
-    public static final String EXPENSE_SHEET = "Sheet1";
-    public static final String CONTACT_SHEET = "ContactMap";
+    private final String spreadsheetId;
+    public final String expenseSheet;
+    public final String contactSheet;
 
     private final Sheets sheets;
     private final JsonFactory jsonFactory;
-    private GoogleSheets() {
-        try{
+
+    public GoogleSheets(final GoogleApiConfigurationProperties config) {
+        this.spreadsheetId = config.getSheets().getSpreadsheetId();
+        this.expenseSheet = config.getSheets().getExpenseSheet();
+        this.contactSheet = config.getSheets().getContactSheet();
+        try {
             final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
             jsonFactory = GsonFactory.getDefaultInstance();
-            sheets = new Sheets.Builder(httpTransport, jsonFactory, getCredentials(httpTransport))
+            sheets = new Sheets.Builder(httpTransport, jsonFactory, getCredentials(httpTransport, config))
                     .setApplicationName("Google Sheets API Quickstart")
                     .build();
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public void updateExpenseCell(final String cellAddress, final String content) {
         try {
-            final String range = EXPENSE_SHEET + "!" + cellAddress;
+            final String range = expenseSheet + "!" + cellAddress;
 
             List<List<Object>> values = List.of(List.of(content));
             ValueRange body = new ValueRange().setValues(values);
 
             sheets.spreadsheets().values()
-                    .update(SPREADSHEET_ID, range, body)
+                    .update(spreadsheetId, range, body)
                     .setValueInputOption("RAW")
                     .execute();
         } catch (Exception e) {
@@ -63,16 +63,16 @@ public class GoogleSheets {
 
     public String[][] getCellRange(final String sheetName, final String range) {
         try {
-            final ValueRange valueRange = sheets.spreadsheets().values().get(SPREADSHEET_ID, sheetName+ "!" + range).execute();
+            final ValueRange valueRange = sheets.spreadsheets().values().get(spreadsheetId, sheetName + "!" + range).execute();
             final List<List<Object>> values = valueRange.getValues();
 
             if (values == null || values.isEmpty()) {
-                return new String[0][0]; // Return an empty 2D array if no data is found
+                return new String[0][0];
             }
 
             final int numRows = values.size();
             int numCols = 0;
-            for(List<Object> row : values) {
+            for (List<Object> row : values) {
                 numCols = Math.max(numCols, row.size());
             }
 
@@ -90,21 +90,21 @@ public class GoogleSheets {
         }
     }
 
-    public String getCell(final String sheetName, final String cell){
+    public String getCell(final String sheetName, final String cell) {
         return getCellRange(sheetName, cell)[0][0];
     }
 
-    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
-        final FileInputStream in = new FileInputStream(CREDENTIALS_PATH);
+    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT, final GoogleApiConfigurationProperties config) throws IOException {
+        final FileInputStream in = new FileInputStream(config.getCredentialsPath());
         final GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
 
         final GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, jsonFactory, clientSecrets, List.of(SheetsScopes.SPREADSHEETS))
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens")))
+                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(config.getTokensDir())))
                 .setAccessType("offline")
                 .build();
-        final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
+        final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(config.getOauthPort()).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 }

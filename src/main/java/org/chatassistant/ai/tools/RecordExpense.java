@@ -5,13 +5,16 @@ import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
 import org.chatassistant.data.Contact;
 
-import java.util.Map;
-
 @AiAgentTool
 public class RecordExpense {
-    private static final GoogleSheets SHEETS = GoogleSheets.getInstance();
-    private static final Contact CONTACT = Contact.getInstance();
+    private final GoogleSheets sheets;
+    private final Contact contact;
     private static final Logger LOGGER = Logger.of(RecordExpense.class);
+
+    public RecordExpense(final GoogleSheets sheets, final Contact contact) {
+        this.sheets = sheets;
+        this.contact = contact;
+    }
 
     /**
      *
@@ -20,21 +23,21 @@ public class RecordExpense {
      *               negative amount if that person owes that money
      * @return errors, if any
      */
-    public static String recordExpense(String name, final double amount){
+    public String recordExpense(String name, final double amount) {
         name = name.toLowerCase();
 
-        if(!CONTACT.NAME_TO_COL_MAP.containsKey(name)){
+        if (!contact.getNameToColMap().containsKey(name)) {
             return "Name not recognized. Try again";
         }
 
-        try{
-            final String cell = CONTACT.NAME_TO_COL_MAP.get(name) + "2";
-            final double currentValue = Double.parseDouble(SHEETS.getCell(GoogleSheets.EXPENSE_SHEET, cell));
-            SHEETS.updateExpenseCell(cell, Double.toString(currentValue + amount));
-        } catch(NumberFormatException e){
+        try {
+            final String cell = contact.getNameToColMap().get(name) + "2";
+            final double currentValue = Double.parseDouble(sheets.getCell(sheets.expenseSheet, cell));
+            sheets.updateExpenseCell(cell, Double.toString(currentValue + amount));
+        } catch (NumberFormatException e) {
             e.printStackTrace();
             return "Error parsing amount. Try again";
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return "Error updating cell. Try again";
         }

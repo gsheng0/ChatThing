@@ -1,7 +1,6 @@
 package org.chatassistant.entities;
 
 import lombok.Getter;
-import org.chatassistant.data.Contact;
 
 @Getter
 public class Message {
@@ -10,25 +9,24 @@ public class Message {
     private final String sender;
     private final String imagePath;
     private final String chatName;
-    private static final Contact contact = Contact.getInstance();
 
     public Message(String timestamp, String text, String sender, String imagePath) {
         this.timestamp = timestamp;
         this.text = text;
-        this.sender = contact.ID_TO_NAME_MAP.getOrDefault(sender, sender);
+        this.sender = sender;
         this.imagePath = imagePath;
         this.chatName = "[NO CHAT SPECIFIED]";
     }
 
-    public Message(final String timestamp, final String text, final String sender, final String imagePath, final String chatName){
+    public Message(final String timestamp, final String text, final String sender, final String imagePath, final String chatName) {
         this.timestamp = timestamp;
         this.text = text;
-        this.sender = contact.ID_TO_NAME_MAP.getOrDefault(sender, sender);
+        this.sender = sender;
         this.imagePath = imagePath;
         this.chatName = chatName;
     }
 
-    public String toString(){
+    public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Timestamp: ");
         builder.append(timestamp);
@@ -52,7 +50,7 @@ public class Message {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof Message message){
+        if (obj instanceof Message message) {
             return message.timestamp.equals(timestamp) && message.text.equals(text) && message.sender.equals(sender);
         }
         return false;

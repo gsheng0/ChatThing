@@ -40,7 +40,10 @@ public class Logger {
         String formatted = string;
         for (final Object arg : args) {
             final int index = formatted.indexOf("{}");
-            if (index == -1) break;
+            if (index == -1)
+                break;
+            if (arg == null)
+                continue;
             formatted = formatted.replaceFirst("\\{\\}", Matcher.quoteReplacement(arg.toString()));
         }
         log(formatted);

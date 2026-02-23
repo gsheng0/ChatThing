@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.chatassistant.Main;
 import org.chatassistant.ai.tools.ToolHolder;
+import org.chatassistant.ai.tools.ToolHolder.InvocableMethod;
 
 import javax.tools.Tool;
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class OpenAiAgent implements AiAgent<Void> {
     private static OpenAiAgent instance;
     private final ObjectMapper mapper;
     private final HttpClient httpClient;
-    private final Map<String, Method> toolMap;
+    private final Map<String, InvocableMethod> toolMap;
 
     public OpenAiAgent(final boolean realToolSet, final ToolHolder toolHolder) {
         this.mapper = new ObjectMapper();
@@ -127,10 +128,10 @@ public class OpenAiAgent implements AiAgent<Void> {
     }
 
     private ArrayNode buildToolsArray() {
-        List<Method> methods = toolMap.values().stream().toList();
         ArrayNode toolsArray = mapper.createArrayNode();
 
-        for (Method method : methods) {
+        for (InvocableMethod invocable : toolMap.values()) {
+            Method method = invocable.method();
             ObjectNode toolNode = mapper.createObjectNode();
             toolNode.put("type", "function");
             ObjectNode functionNode = mapper.createObjectNode();

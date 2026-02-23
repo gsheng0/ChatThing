@@ -28,8 +28,8 @@ public class JsonContextStore implements ContextStore {
     }
 
     @Override
-    public Optional<GeminiContext> load(final String chat, final String capability) {
-        final Path file = filePath(chat, capability);
+    public Optional<GeminiContext> load(final String key) {
+        final Path file = filePath(key);
         if (!Files.exists(file)) {
             return Optional.empty();
         }
@@ -42,15 +42,15 @@ public class JsonContextStore implements ContextStore {
             }
             return Optional.of(context);
         } catch (Exception e) {
-            logger.log("Warning: failed to load context for [{}/{}]: {}", chat, capability, e.getMessage());
+            logger.log("Warning: failed to load context for [{}]: {}", key, e.getMessage());
             return Optional.empty();
         }
     }
 
     @Override
-    public void save(final String chat, final String capability, final GeminiContext context) {
+    public void save(final String key, final GeminiContext context) {
         try {
-            final Path file = filePath(chat, capability);
+            final Path file = filePath(key);
             Files.createDirectories(file.getParent());
             final List<String> contentJsonList = context.getHistory().stream()
                     .map(Content::toJson)
@@ -58,12 +58,12 @@ public class JsonContextStore implements ContextStore {
             final String json = om.writeValueAsString(contentJsonList);
             Files.writeString(file, json, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            logger.log("Warning: failed to save context for [{}/{}]: {}", chat, capability, e.getMessage());
+            logger.log("Warning: failed to save context for [{}]: {}", key, e.getMessage());
         }
     }
 
-    private Path filePath(final String chat, final String capability) {
-        return Path.of(storagePath, sanitize(chat) + "--" + sanitize(capability) + ".json");
+    private Path filePath(final String key) {
+        return Path.of(storagePath, sanitize(key) + ".json");
     }
 
     private static String sanitize(final String input) {

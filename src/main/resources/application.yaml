@@ -11,14 +11,24 @@ google:
   calendar:
     tokens-dir: tokens-calendar
     oauth-port: 8889
+    calendar-id: primary
+    time-zone: America/New_York
   tokens-dir: tokens
   oauth-port: 8888
 
 tasks:
+  admin-chat: "Admin"
   capabilities:
     expenses:
       provider: claude
       prompt-path: src/main/resources/expenseTrackingPrompt2
+      model-name: claude-sonnet-4-6
+      real-tool-set: true
+      chats:
+        - "Sewerslide Pack"
+    scheduling:
+      provider: claude
+      prompt-path: src/main/resources/schedulingPrompt
       model-name: claude-sonnet-4-6
       real-tool-set: true
       chats:

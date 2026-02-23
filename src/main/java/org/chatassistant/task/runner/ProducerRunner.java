@@ -27,6 +27,13 @@ public class ProducerRunner<T> extends Runner {
         }
     }
 
+    public void unregister(final ConsumerRunner<T> runner, final String topic) {
+        final List<BlockingDeque<T>> queues = outputMap.get(topic);
+        if (queues != null) {
+            queues.remove(runner.queue());
+        }
+    }
+
     @Override
     public void run() {
         while (isRunning()) {

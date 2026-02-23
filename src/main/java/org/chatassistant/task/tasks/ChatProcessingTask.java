@@ -33,6 +33,7 @@ public class ChatProcessingTask implements ConsumerTask<Message> {
             imagePaths.add(imagePath);
         }
         if (message.getText() != null && !message.getText().isEmpty()) {
+            prompt.append("[Chat: ").append(message.getChatName()).append("]\n");
             prompt.append(message.getSender()).append(": ").append(message.getText()).append("\n");
         }
 

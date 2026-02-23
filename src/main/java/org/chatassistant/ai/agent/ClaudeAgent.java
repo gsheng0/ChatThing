@@ -52,14 +52,15 @@ public class ClaudeAgent implements AiAgent<GeminiContext> {
         if (imagePaths.isEmpty()) {
             builder.addUserMessage(prompt);
         } else {
-            final List<BetaContentBlockParam> parts = new ArrayList<>();
+            // Summarize each image to text; store only the summary in history
+            final StringBuilder userMessage = new StringBuilder();
             if (!prompt.isEmpty()) {
-                parts.add(BetaContentBlockParam.ofText(BetaTextBlockParam.builder().text(prompt).build()));
+                userMessage.append(prompt).append("\n\n");
             }
             for (final String imagePath : imagePaths) {
-                parts.add(buildImageBlock(imagePath));
+                userMessage.append(summarizeImage(imagePath)).append("\n");
             }
-            builder.addUserMessageOfBetaContentBlockParams(parts);
+            builder.addUserMessage(userMessage.toString().trim());
         }
 
         while (true) {
@@ -164,6 +165,30 @@ public class ClaudeAgent implements AiAgent<GeminiContext> {
         if (primitive == long.class) return Long.class;
         if (primitive == boolean.class) return Boolean.class;
         return primitive;
+    }
+
+    private String summarizeImage(final String imagePath) {
+        final List<BetaContentBlockParam> parts = List.of(
+            BetaContentBlockParam.ofText(BetaTextBlockParam.builder()
+                .text("Describe the content of this image in detail. Include all visible text, " +
+                      "numbers, dates, names, and any other relevant information.")
+                .build()),
+            buildImageBlock(imagePath)
+        );
+
+        final BetaMessage response = client.beta().messages().create(
+            MessageCreateParams.builder()
+                .model(modelName)
+                .maxTokens(1024L)
+                .addUserMessageOfBetaContentBlockParams(parts)
+                .build()
+        );
+
+        return response.content().stream()
+            .flatMap(b -> b.text().stream())
+            .map(BetaTextBlock::text)
+            .findFirst()
+            .orElse("[Image: could not extract content]");
     }
 
     private BetaContentBlockParam buildImageBlock(final String imagePath) {

@@ -1,25 +1,24 @@
 package org.chatassistant.ai.tools;
 
-import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 @AiAgentTool
-public class SendTextMessage {
+public class NotifyOwner {
     private static final String SCRIPT_PATH = "/Users/georgesheng/proj/scheduler2/send_message_to_gc.scpt";
-    private static final Logger LOGGER = Logger.of(SendTextMessage.class);
+    private static final String OWNER_ID = "owner@icloud.com"; // hardcoded owner Apple ID
 
     /**
-     * Sends a text message to an iMessage group chat.
-     * @param chatName the exact name of the group chat to send to
-     * @param message the content of the text message to be sent
+     * Sends a direct iMessage to the owner of this system.
+     * Use this to report errors, flag anomalies, or send alerts that only the owner should see.
+     * @param message the message content
      */
-    public void sendTextMessage(final String chatName, final String message) {
+    public void notifyOwner(final String message) {
         final String paddedMessage = "[Intern]: " + message;
         try {
-            ProcessBuilder pb = new ProcessBuilder("osascript", SCRIPT_PATH, chatName, paddedMessage);
+            ProcessBuilder pb = new ProcessBuilder("osascript", SCRIPT_PATH, OWNER_ID, paddedMessage);
             Process process = pb.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -34,7 +33,7 @@ public class SendTextMessage {
                 System.err.println("[Error] " + line);
             }
 
-            int exitCode = process.waitFor();
+            process.waitFor();
         } catch (Exception e) {
             e.printStackTrace();
         }

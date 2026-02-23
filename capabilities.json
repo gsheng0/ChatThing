@@ -1,0 +1,20 @@
+{
+  "capabilities" : {
+    "expenses" : {
+      "provider" : "claude",
+      "promptPath" : "src/main/resources/expenseTrackingPrompt2",
+      "modelName" : "claude-sonnet-4-6",
+      "realToolSet" : true,
+      "chat" : "Sewerslide Pack",
+      "enabled" : true
+    },
+    "scheduling" : {
+      "provider" : "claude",
+      "promptPath" : "src/main/resources/schedulingPrompt",
+      "modelName" : "claude-sonnet-4-6",
+      "realToolSet" : true,
+      "chat" : "Sewerslide Pack",
+      "enabled" : true
+    }
+  }
+}

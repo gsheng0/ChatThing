@@ -2,24 +2,17 @@ package org.chatassistant.config;
 
 import jakarta.annotation.PostConstruct;
 import org.chatassistant.Logger;
-import org.chatassistant.ai.agent.AiAgent;
-import org.chatassistant.ai.agent.ClaudeAgent;
-import org.chatassistant.ai.agent.GeminiAgent;
-import org.chatassistant.ai.agent.GeminiContext;
-
-import org.chatassistant.ai.tools.ToolHolder;
-import org.chatassistant.context.ContextManager;
 import org.chatassistant.entities.Message;
 import org.chatassistant.task.runner.ConsumerRunner;
 import org.chatassistant.task.runner.ProducerRunner;
-import org.chatassistant.task.tasks.ChatProcessingTask;
+import org.chatassistant.task.tasks.AdminChatProcessingTask;
 import org.chatassistant.task.tasks.MessagePollingTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 
 @Component
 public class TaskRunner {
@@ -27,21 +20,21 @@ public class TaskRunner {
 
     private final MessagePollingTask pollingTask;
     private final TasksConfigurationProperties tasksConfig;
-    private final ToolHolder toolHolder;
-    private final ContextManager contextManager;
     private final LoggingConfigurationProperties loggingConfig;
+    private final CapabilityManager capabilityManager;
+    private final DynamicConfigStore configStore;
 
     @Autowired
     public TaskRunner(final MessagePollingTask pollingTask,
                       final TasksConfigurationProperties tasksConfig,
-                      final ToolHolder toolHolder,
-                      final ContextManager contextManager,
-                      final LoggingConfigurationProperties loggingConfig) {
+                      final LoggingConfigurationProperties loggingConfig,
+                      final CapabilityManager capabilityManager,
+                      final DynamicConfigStore configStore) {
         this.pollingTask = pollingTask;
         this.tasksConfig = tasksConfig;
-        this.toolHolder = toolHolder;
-        this.contextManager = contextManager;
         this.loggingConfig = loggingConfig;
+        this.capabilityManager = capabilityManager;
+        this.configStore = configStore;
     }
 
     @PostConstruct
@@ -50,20 +43,40 @@ public class TaskRunner {
         Logger.init(LOG_BASE + loggingConfig.getOutputFolder() + "/" + timestamp + ".log");
 
         final ProducerRunner<Message> producer = new ProducerRunner<>(pollingTask);
+        capabilityManager.init(producer);
 
-        for (final Map.Entry<String, TasksConfigurationProperties.CapabilityConfig> entry : tasksConfig.getCapabilities().entrySet()) {
-            final String capabilityName = entry.getKey();
-            final TasksConfigurationProperties.CapabilityConfig cap = entry.getValue();
+        // Bootstrap: load JSON; seed from YAML capabilities if absent
+        DynamicConfig config = configStore.load();
+        if (config.getCapabilities().isEmpty() && !tasksConfig.getCapabilities().isEmpty()) {
+            for (final var entry : tasksConfig.getCapabilities().entrySet()) {
+                final TasksConfigurationProperties.CapabilityConfig src = entry.getValue();
+                final DynamicConfig.Capability cap = new DynamicConfig.Capability();
+                cap.setProvider(src.getProvider());
+                cap.setPromptPath(src.getPromptPath());
+                cap.setModelName(src.getModelName());
+                cap.setRealToolSet(src.isRealToolSet());
+                // Use first chat in the list as the single chat value
+                final List<String> chats = src.getChats();
+                cap.setChat(chats != null && !chats.isEmpty() ? chats.get(0) : null);
+                cap.setEnabled(true);
+                config.getCapabilities().put(entry.getKey(), cap);
+            }
+            configStore.save(config);
+        }
 
-            final AiAgent<GeminiContext> agent = "claude".equalsIgnoreCase(cap.getProvider())
-                    ? new ClaudeAgent(cap.getModelName(), cap.getPromptPath(), cap.isRealToolSet(), toolHolder)
-                    : new GeminiAgent(cap.getModelName(), cap.getPromptPath(), cap.isRealToolSet(), toolHolder);
-            final ChatProcessingTask chatTask = new ChatProcessingTask(agent, contextManager, capabilityName, capabilityName);
-            final ConsumerRunner<Message> consumer = new ConsumerRunner<>(chatTask);
+        // Start all enabled capabilities
+        config.getCapabilities().entrySet().stream()
+                .filter(e -> e.getValue().isEnabled())
+                .forEach(e -> capabilityManager.start(e.getKey(), e.getValue()));
 
-            producer.register(consumer, cap.getChats());
-
-            Thread.ofVirtual().name("Consumer-" + capabilityName).start(consumer);
+        // Register admin chat consumer
+        final String adminChat = tasksConfig.getAdminChat();
+        if (adminChat != null && !adminChat.isBlank()) {
+            final AdminChatProcessingTask adminTask =
+                    new AdminChatProcessingTask(capabilityManager, configStore, adminChat);
+            final ConsumerRunner<Message> adminConsumer = new ConsumerRunner<>(adminTask);
+            producer.register(adminConsumer, adminChat);
+            Thread.ofVirtual().name("Consumer-admin").start(adminConsumer);
         }
 
         Thread.ofVirtual().name("MessagePoller").start(producer);

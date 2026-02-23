@@ -79,6 +79,28 @@ public class GoogleCalendar {
         }
     }
 
+    public List<Event> getEventsInRange(String calendarId, DateTime timeMin, DateTime timeMax) {
+        try {
+            Events events = calendar.events().list(calendarId)
+                    .setTimeMin(timeMin)
+                    .setTimeMax(timeMax)
+                    .setOrderBy("startTime")
+                    .setSingleEvents(true)
+                    .execute();
+            return events.getItems();
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving events in range: " + e.getMessage(), e);
+        }
+    }
+
+    public Event getEvent(String calendarId, String eventId) {
+        try {
+            return calendar.events().get(calendarId, eventId).execute();
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving event " + eventId + ": " + e.getMessage(), e);
+        }
+    }
+
     private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT, final GoogleApiConfigurationProperties config) throws IOException {
         final FileInputStream in = new FileInputStream(config.getCredentialsPath());
         final GoogleClientSecrets clientSecrets =

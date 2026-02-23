@@ -45,11 +45,19 @@ public class GoogleApiConfigurationProperties {
     public static class Calendar {
         private String tokensDir;
         private int oauthPort;
+        private String calendarId;
+        private String timeZone;
 
         public String getTokensDir() { return tokensDir; }
         public void setTokensDir(String tokensDir) { this.tokensDir = tokensDir; }
 
         public int getOauthPort() { return oauthPort; }
         public void setOauthPort(int oauthPort) { this.oauthPort = oauthPort; }
+
+        public String getCalendarId() { return calendarId; }
+        public void setCalendarId(String calendarId) { this.calendarId = calendarId; }
+
+        public String getTimeZone() { return timeZone; }
+        public void setTimeZone(String timeZone) { this.timeZone = timeZone; }
     }
 }

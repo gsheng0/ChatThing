@@ -15,6 +15,7 @@ import java.util.Map;
 @Component
 @ConfigurationProperties("tasks")
 public class TasksConfigurationProperties {
+    private String adminChat;
     private Map<String, CapabilityConfig> capabilities = new HashMap<>();
 
     @Getter

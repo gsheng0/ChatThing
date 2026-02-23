@@ -91,20 +91,23 @@ public class GoogleSheets {
     }
 
     public String getCell(final String sheetName, final String cell) {
-        return getCellRange(sheetName, cell)[0][0];
+        final String[][] result = getCellRange(sheetName, cell);
+        if (result.length == 0 || result[0].length == 0) return "";
+        return result[0][0];
     }
 
     private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT, final GoogleApiConfigurationProperties config) throws IOException {
-        final FileInputStream in = new FileInputStream(config.getCredentialsPath());
-        final GoogleClientSecrets clientSecrets =
-                GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
+        try (final FileInputStream in = new FileInputStream(config.getCredentialsPath())) {
+            final GoogleClientSecrets clientSecrets =
+                    GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
 
-        final GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, jsonFactory, clientSecrets, List.of(SheetsScopes.SPREADSHEETS))
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(config.getTokensDir())))
-                .setAccessType("offline")
-                .build();
-        final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(config.getOauthPort()).build();
-        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+            final GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+                    HTTP_TRANSPORT, jsonFactory, clientSecrets, List.of(SheetsScopes.SPREADSHEETS))
+                    .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(config.getTokensDir())))
+                    .setAccessType("offline")
+                    .build();
+            final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(config.getOauthPort()).build();
+            return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+        }
     }
 }

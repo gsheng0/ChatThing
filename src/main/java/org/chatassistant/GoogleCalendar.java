@@ -102,16 +102,17 @@ public class GoogleCalendar {
     }
 
     private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT, final GoogleApiConfigurationProperties config) throws IOException {
-        final FileInputStream in = new FileInputStream(config.getCredentialsPath());
-        final GoogleClientSecrets clientSecrets =
-                GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
+        try (final FileInputStream in = new FileInputStream(config.getCredentialsPath())) {
+            final GoogleClientSecrets clientSecrets =
+                    GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
 
-        final GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, jsonFactory, clientSecrets, List.of(CalendarScopes.CALENDAR))
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(config.getCalendar().getTokensDir())))
-                .setAccessType("offline")
-                .build();
-        final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(config.getCalendar().getOauthPort()).build();
-        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+            final GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+                    HTTP_TRANSPORT, jsonFactory, clientSecrets, List.of(CalendarScopes.CALENDAR))
+                    .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(config.getCalendar().getTokensDir())))
+                    .setAccessType("offline")
+                    .build();
+            final LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(config.getCalendar().getOauthPort()).build();
+            return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+        }
     }
 }

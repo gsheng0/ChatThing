@@ -39,7 +39,12 @@ public class ChatProcessingTask implements ConsumerTask<Message> {
 
         if (!prompt.isEmpty() || !imagePaths.isEmpty()) {
             final GeminiContext context = contextManager.getOrCreate(contextKey);
-            agent.ask(context, prompt.toString(), imagePaths);
+            try {
+                agent.ask(context, prompt.toString(), imagePaths);
+            } catch (Exception e) {
+                System.err.println("[" + capabilityName + "] agent.ask() failed: " + e.getMessage());
+                e.printStackTrace();
+            }
             contextManager.afterTurn(context, contextKey);
         }
     }

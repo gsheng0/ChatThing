@@ -13,7 +13,7 @@ public class DynamicConfigStore {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    public DynamicConfig load() {
+    public synchronized DynamicConfig load() {
         final File file = new File(CONFIG_PATH);
         if (!file.exists()) {
             return new DynamicConfig();
@@ -25,7 +25,7 @@ public class DynamicConfigStore {
         }
     }
 
-    public void save(final DynamicConfig config) {
+    public synchronized void save(final DynamicConfig config) {
         try {
             objectMapper.writeValue(new File(CONFIG_PATH), config);
         } catch (Exception e) {

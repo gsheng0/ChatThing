@@ -22,6 +22,8 @@ public class ClaudeAgent implements AiAgent<GeminiContext> {
     private final Map<String, InvocableMethod> toolMap;
     private final ObjectMapper om = new ObjectMapper();
 
+    private static final int MAX_TOOL_ROUNDS = 20;
+
     // Per-context conversation history, keyed by GeminiContext identity
     private final IdentityHashMap<GeminiContext, MessageCreateParams.Builder> builders = new IdentityHashMap<>();
 
@@ -40,62 +42,69 @@ public class ClaudeAgent implements AiAgent<GeminiContext> {
 
     @Override
     public String ask(final GeminiContext context, final String prompt, final List<String> imagePaths) {
-        final MessageCreateParams.Builder builder = builders.computeIfAbsent(context, k -> {
-            final MessageCreateParams.Builder b = MessageCreateParams.builder()
-                    .model(modelName)
-                    .maxTokens(4096L)
-                    .system(systemPrompt);
-            tools.forEach(b::addTool);
-            return b;
-        });
-
-        if (imagePaths.isEmpty()) {
-            builder.addUserMessage(prompt);
-        } else {
-            // Summarize each image to text; store only the summary in history
-            final StringBuilder userMessage = new StringBuilder();
-            if (!prompt.isEmpty()) {
-                userMessage.append(prompt).append("\n\n");
-            }
-            for (final String imagePath : imagePaths) {
-                userMessage.append(summarizeImage(imagePath)).append("\n");
-            }
-            builder.addUserMessage(userMessage.toString().trim());
+        final MessageCreateParams.Builder builder;
+        synchronized (builders) {
+            builder = builders.computeIfAbsent(context, k -> {
+                final MessageCreateParams.Builder b = MessageCreateParams.builder()
+                        .model(modelName)
+                        .maxTokens(4096L)
+                        .system(systemPrompt);
+                tools.forEach(b::addTool);
+                return b;
+            });
         }
 
-        while (true) {
-            final BetaMessage response = client.beta().messages().create(builder.build());
-
-            final List<BetaToolUseBlock> toolUseBlocks = response.content().stream()
-                    .flatMap(b -> b.toolUse().stream())
-                    .toList();
-
-            if (toolUseBlocks.isEmpty()) {
-                return response.content().stream()
-                        .flatMap(b -> b.text().stream())
-                        .map(BetaTextBlock::text)
-                        .findFirst()
-                        .orElse(null);
+        synchronized (builder) {
+            if (imagePaths.isEmpty()) {
+                builder.addUserMessage(prompt);
+            } else {
+                // Summarize each image to text; store only the summary in history
+                final StringBuilder userMessage = new StringBuilder();
+                if (!prompt.isEmpty()) {
+                    userMessage.append(prompt).append("\n\n");
+                }
+                for (final String imagePath : imagePaths) {
+                    userMessage.append(summarizeImage(imagePath)).append("\n");
+                }
+                builder.addUserMessage(userMessage.toString().trim());
             }
 
-            // Add assistant's tool-use message to history
-            final List<BetaContentBlockParam> assistantParts = response.content().stream()
-                    .map(this::toParam)
-                    .filter(Objects::nonNull)
-                    .toList();
-            builder.addAssistantMessageOfBetaContentBlockParams(assistantParts);
+            for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+                final BetaMessage response = client.beta().messages().create(builder.build());
 
-            // Invoke tools and collect results
-            final List<BetaContentBlockParam> toolResults = new ArrayList<>();
-            for (final BetaToolUseBlock toolUse : toolUseBlocks) {
-                final String result = invokeTool(toolUse.name(), toolUse._input());
-                toolResults.add(BetaContentBlockParam.ofToolResult(
-                        BetaToolResultBlockParam.builder()
-                                .toolUseId(toolUse.id())
-                                .content(result)
-                                .build()));
+                final List<BetaToolUseBlock> toolUseBlocks = response.content().stream()
+                        .flatMap(b -> b.toolUse().stream())
+                        .toList();
+
+                if (toolUseBlocks.isEmpty()) {
+                    return response.content().stream()
+                            .flatMap(b -> b.text().stream())
+                            .map(BetaTextBlock::text)
+                            .findFirst()
+                            .orElse(null);
+                }
+
+                // Add assistant's tool-use message to history
+                final List<BetaContentBlockParam> assistantParts = response.content().stream()
+                        .map(this::toParam)
+                        .filter(Objects::nonNull)
+                        .toList();
+                builder.addAssistantMessageOfBetaContentBlockParams(assistantParts);
+
+                // Invoke tools and collect results
+                final List<BetaContentBlockParam> toolResults = new ArrayList<>();
+                for (final BetaToolUseBlock toolUse : toolUseBlocks) {
+                    final String result = invokeTool(toolUse.name(), toolUse._input());
+                    toolResults.add(BetaContentBlockParam.ofToolResult(
+                            BetaToolResultBlockParam.builder()
+                                    .toolUseId(toolUse.id())
+                                    .content(result)
+                                    .build()));
+                }
+                builder.addUserMessageOfBetaContentBlockParams(toolResults);
             }
-            builder.addUserMessageOfBetaContentBlockParams(toolResults);
+
+            return null; // MAX_TOOL_ROUNDS exceeded
         }
     }
 

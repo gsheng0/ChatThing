@@ -171,12 +171,22 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
         return "Updated " + field + " for '" + name + "' to: " + value;
     }
 
-    private void sendReply(final String message) {
-        try {
-            final ProcessBuilder pb = new ProcessBuilder("osascript", SCRIPT_PATH, adminChat,
-                    "[Admin]: " + message);
-            final Process process = pb.start();
+    private static final int MAX_MESSAGE_LENGTH = 2000;
 
+    private void sendReply(final String message) {
+        final String safeMessage = message.length() > MAX_MESSAGE_LENGTH
+                ? message.substring(0, MAX_MESSAGE_LENGTH) + "…"
+                : message;
+
+        final Process process;
+        try {
+            process = new ProcessBuilder("osascript", SCRIPT_PATH, adminChat,
+                    "[Admin]: " + safeMessage).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        try {
             final BufferedReader error = new BufferedReader(new InputStreamReader(process.getErrorStream()));
             String line;
             while ((line = error.readLine()) != null) {
@@ -186,6 +196,8 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
             process.waitFor();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            process.destroy();
         }
     }
 }

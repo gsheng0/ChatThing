@@ -19,6 +19,7 @@
 ~~15. reorganize tool loop for gemini agent~~
 ~~16. relocate get tools method to be separate from AiAgent class~~
 ~~17. start on sub agent framework~~
+18. Make send to admin/single phone number script
 
 
 python script -> polling thread -> orchestrator thread -> chat specific processing thread

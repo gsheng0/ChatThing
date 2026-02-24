@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct;
 import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.ToolRegistry;
 import org.chatassistant.config.LoggingConfigurationProperties;
-import org.chatassistant.config.TasksConfigurationProperties;
+import org.chatassistant.config.AgentsConfigurationProperties;
 import org.chatassistant.context.ContextManager;
 import org.chatassistant.entities.Message;
 import org.chatassistant.task.runner.ConsumerRunner;
@@ -22,7 +22,7 @@ public class TaskRunner {
     private static final String LOG_BASE = "/Users/georgesheng/proj/scheduler2/logs/";
 
     private final MessagePollingTask pollingTask;
-    private final TasksConfigurationProperties tasksConfig;
+    private final AgentsConfigurationProperties tasksConfig;
     private final LoggingConfigurationProperties loggingConfig;
     private final AgentStore agentStore;
     private final ToolRegistry toolRegistry;
@@ -30,7 +30,7 @@ public class TaskRunner {
 
     @Autowired
     public TaskRunner(final MessagePollingTask pollingTask,
-                      final TasksConfigurationProperties tasksConfig,
+                      final AgentsConfigurationProperties tasksConfig,
                       final LoggingConfigurationProperties loggingConfig,
                       final AgentStore agentStore,
                       final ToolRegistry toolRegistry,

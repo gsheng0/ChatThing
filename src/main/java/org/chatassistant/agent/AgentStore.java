@@ -2,7 +2,7 @@ package org.chatassistant.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.chatassistant.config.TasksConfigurationProperties;
+import org.chatassistant.config.AgentsConfigurationProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +31,7 @@ public class AgentStore {
             .enable(SerializationFeature.INDENT_OUTPUT);
 
     @Autowired
-    public AgentStore(final TasksConfigurationProperties tasksConfig) {
+    public AgentStore(final AgentsConfigurationProperties tasksConfig) {
         this.yamlDefaults = tasksConfig.getAgents();
     }
 

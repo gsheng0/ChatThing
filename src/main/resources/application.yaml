@@ -16,7 +16,7 @@ google:
   tokens-dir: tokens
   oauth-port: 8888
 
-tasks:
+agents:
   admin-chat: "Admin"
   agents:
     expenses:

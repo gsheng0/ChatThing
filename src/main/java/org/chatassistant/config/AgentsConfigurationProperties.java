@@ -12,8 +12,8 @@ import java.util.Map;
 @Setter
 @Getter
 @Component
-@ConfigurationProperties("tasks")
-public class TasksConfigurationProperties {
+@ConfigurationProperties("agents")
+public class AgentsConfigurationProperties {
     private String adminChat;
     private Map<String, AgentConfig> agents = new HashMap<>();
 }

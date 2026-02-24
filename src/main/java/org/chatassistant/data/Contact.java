@@ -1,7 +1,7 @@
 package org.chatassistant.data;
 
 import lombok.Getter;
-import org.chatassistant.GoogleSheets;
+import org.chatassistant.google.GoogleSheets;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -19,11 +19,13 @@ public class Contact {
 
     public Contact(final GoogleSheets sheets) {
         // Name to col map
-        final String[] names = sheets.getCellRange(sheets.expenseSheet, "A1:G1")[0];
+        final String[][] nameRows = sheets.getCellRange(sheets.expenseSheet, "A1:G1");
         final HashMap<String, String> nameToColMapBuilder = new HashMap<>();
-        char col = 'A';
-        for (final String name : names) {
-            nameToColMapBuilder.put(name.toLowerCase(), String.valueOf(col++));
+        if (nameRows.length > 0) {
+            char col = 'A';
+            for (final String name : nameRows[0]) {
+                nameToColMapBuilder.put(name.toLowerCase(), String.valueOf(col++));
+            }
         }
         nameToColMap = Collections.unmodifiableMap(nameToColMapBuilder);
 
@@ -31,7 +33,9 @@ public class Contact {
         final String[][] senderIdToName = sheets.getCellRange(sheets.contactSheet, "A1:B13");
         final HashMap<String, String> idToNameMapBuilder = new HashMap<>();
         for (final String[] pair : senderIdToName) {
-            idToNameMapBuilder.put(pair[0], pair[1]);
+            if (pair.length >= 2) {
+                idToNameMapBuilder.put(pair[0], pair[1]);
+            }
         }
         idToNameMap = Collections.unmodifiableMap(idToNameMapBuilder);
     }

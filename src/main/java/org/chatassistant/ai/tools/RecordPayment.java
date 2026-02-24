@@ -1,8 +1,9 @@
 package org.chatassistant.ai.tools;
 
-import org.chatassistant.GoogleSheets;
+import org.chatassistant.google.GoogleSheets;
 import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.data.Contact;
 
 @AiAgentTool
@@ -23,6 +24,7 @@ public class RecordPayment {
      * @param amount the amount paid by the sender to the receiver
      * @return errors, if any
      */
+    @ToolMethod
     public String recordPayment(String sender, String receiver, final double amount) {
         sender = sender.toLowerCase();
         receiver = receiver.toLowerCase();

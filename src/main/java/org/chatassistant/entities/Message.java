@@ -2,6 +2,8 @@ package org.chatassistant.entities;
 
 import lombok.Getter;
 
+import java.util.Objects;
+
 @Getter
 public class Message {
     private final String timestamp;
@@ -45,13 +47,17 @@ public class Message {
 
     @Override
     public int hashCode() {
-        return Integer.hashCode(timestamp.hashCode() + text.hashCode() + sender.hashCode());
+        return Objects.hash(timestamp, text, sender, imagePath, chatName);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Message message) {
-            return message.timestamp.equals(timestamp) && message.text.equals(text) && message.sender.equals(sender);
+            return Objects.equals(timestamp, message.timestamp)
+                    && Objects.equals(text, message.text)
+                    && Objects.equals(sender, message.sender)
+                    && Objects.equals(imagePath, message.imagePath)
+                    && Objects.equals(chatName, message.chatName);
         }
         return false;
     }

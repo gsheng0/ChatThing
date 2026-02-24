@@ -6,15 +6,19 @@ import com.anthropic.core.JsonValue;
 import com.anthropic.models.beta.messages.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.chatassistant.Util;
-import org.chatassistant.ai.tools.ToolHolder;
-import org.chatassistant.ai.tools.ToolHolder.InvocableMethod;
+import org.chatassistant.ai.tools.ToolRegistry;
+import org.chatassistant.ai.tools.ToolRegistry.InvocableMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public class ClaudeAgent implements AiAgent<GeminiContext> {
+public class ClaudeAgent implements AiAgent<AgentContext> {
     private final AnthropicClient client;
     private final String modelName;
     private final String systemPrompt;
@@ -24,88 +28,99 @@ public class ClaudeAgent implements AiAgent<GeminiContext> {
 
     private static final int MAX_TOOL_ROUNDS = 20;
 
-    // Per-context conversation history, keyed by GeminiContext identity
-    private final IdentityHashMap<GeminiContext, MessageCreateParams.Builder> builders = new IdentityHashMap<>();
-
-    public ClaudeAgent(final String modelName, final String promptPath, final boolean realToolSet, final ToolHolder toolHolder) {
+    public ClaudeAgent(final String modelName, final String promptPath, final ToolRegistry toolRegistry) {
         this.client = AnthropicOkHttpClient.fromEnv();
         this.modelName = modelName;
         this.systemPrompt = Util.readFile(promptPath);
-        this.toolMap = toolHolder.getToolMap(realToolSet);
+        this.toolMap = toolRegistry.getToolMap();
         this.tools = buildTools(toolMap);
     }
 
+    /** Creates a tool-free agent for one-shot calls where the system prompt is provided inline. */
+    public static ClaudeAgent toolFree(final String modelName, final String systemPromptText) {
+        return new ClaudeAgent(modelName, systemPromptText);
+    }
+
+    private ClaudeAgent(final String modelName, final String systemPromptText) {
+        this.client = AnthropicOkHttpClient.fromEnv();
+        this.modelName = modelName;
+        this.systemPrompt = systemPromptText;
+        this.toolMap = Map.of();
+        this.tools = List.of();
+    }
+
     @Override
-    public String ask(final GeminiContext context, final String prompt) {
+    public String ask(final AgentContext context, final String prompt) {
         return ask(context, prompt, List.of());
     }
 
     @Override
-    public String ask(final GeminiContext context, final String prompt, final List<String> imagePaths) {
-        final MessageCreateParams.Builder builder;
-        synchronized (builders) {
-            builder = builders.computeIfAbsent(context, k -> {
-                final MessageCreateParams.Builder b = MessageCreateParams.builder()
-                        .model(modelName)
-                        .maxTokens(4096L)
-                        .system(systemPrompt);
-                tools.forEach(b::addTool);
-                return b;
-            });
-        }
-
-        synchronized (builder) {
-            if (imagePaths.isEmpty()) {
-                builder.addUserMessage(prompt);
-            } else {
-                // Summarize each image to text; store only the summary in history
-                final StringBuilder userMessage = new StringBuilder();
-                if (!prompt.isEmpty()) {
-                    userMessage.append(prompt).append("\n\n");
-                }
-                for (final String imagePath : imagePaths) {
-                    userMessage.append(summarizeImage(imagePath)).append("\n");
-                }
-                builder.addUserMessage(userMessage.toString().trim());
-            }
-
-            for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
-                final BetaMessage response = client.beta().messages().create(builder.build());
-
-                final List<BetaToolUseBlock> toolUseBlocks = response.content().stream()
-                        .flatMap(b -> b.toolUse().stream())
-                        .toList();
-
-                if (toolUseBlocks.isEmpty()) {
-                    return response.content().stream()
-                            .flatMap(b -> b.text().stream())
-                            .map(BetaTextBlock::text)
-                            .findFirst()
-                            .orElse(null);
-                }
-
-                // Add assistant's tool-use message to history
-                final List<BetaContentBlockParam> assistantParts = response.content().stream()
-                        .map(this::toParam)
-                        .filter(Objects::nonNull)
-                        .toList();
-                builder.addAssistantMessageOfBetaContentBlockParams(assistantParts);
-
-                // Invoke tools and collect results
-                final List<BetaContentBlockParam> toolResults = new ArrayList<>();
-                for (final BetaToolUseBlock toolUse : toolUseBlocks) {
-                    final String result = invokeTool(toolUse.name(), toolUse._input());
-                    toolResults.add(BetaContentBlockParam.ofToolResult(
-                            BetaToolResultBlockParam.builder()
-                                    .toolUseId(toolUse.id())
-                                    .content(result)
+    public String ask(final AgentContext context, final String prompt, final List<String> imagePaths) {
+        if (context.getAgentState(MessageCreateParams.Builder.class) == null) {
+            final MessageCreateParams.Builder b = MessageCreateParams.builder()
+                    .model(modelName)
+                    .maxTokens(4096L)
+                    .systemOfBetaTextBlockParams(List.of(
+                            BetaTextBlockParam.builder()
+                                    .text(systemPrompt)
+                                    .cacheControl(BetaCacheControlEphemeral.builder().build())
                                     .build()));
-                }
-                builder.addUserMessageOfBetaContentBlockParams(toolResults);
+            tools.forEach(b::addTool);
+            context.setAgentState(b);
+        }
+        final MessageCreateParams.Builder builder = context.getAgentState(MessageCreateParams.Builder.class);
+
+        if (imagePaths.isEmpty()) {
+            builder.addUserMessage(prompt);
+        } else {
+            // Summarize each image to text; store only the summary in history
+            final StringBuilder userMessage = new StringBuilder();
+            if (!prompt.isEmpty()) {
+                userMessage.append(prompt).append("\n\n");
+            }
+            for (final String imagePath : imagePaths) {
+                userMessage.append(summarizeImage(imagePath)).append("\n");
+            }
+            builder.addUserMessage(userMessage.toString().trim());
+        }
+
+        for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+            final BetaMessage response = client.beta().messages().create(builder.build());
+
+            final List<BetaToolUseBlock> toolUseBlocks = response.content().stream()
+                    .flatMap(b -> b.toolUse().stream())
+                    .toList();
+
+            if (toolUseBlocks.isEmpty()) {
+                return response.content().stream()
+                        .flatMap(b -> b.text().stream())
+                        .map(BetaTextBlock::text)
+                        .findFirst()
+                        .orElse(null);
             }
 
-            return null; // MAX_TOOL_ROUNDS exceeded
+            // Add assistant's tool-use message to history
+            final List<BetaContentBlockParam> assistantParts = response.content().stream()
+                    .map(this::toParam)
+                    .filter(Objects::nonNull)
+                    .toList();
+            builder.addAssistantMessageOfBetaContentBlockParams(assistantParts);
+
+            // Invoke tools and collect results
+            final List<BetaContentBlockParam> toolResults = new ArrayList<>();
+            for (final BetaToolUseBlock toolUse : toolUseBlocks) {
+                final String result = invokeTool(toolUse.name(), toolUse._input());
+                toolResults.add(BetaContentBlockParam.ofToolResult(
+                        BetaToolResultBlockParam.builder()
+                                .toolUseId(toolUse.id())
+                                .content(result)
+                                .build()));
+            }
+            builder.addUserMessageOfBetaContentBlockParams(toolResults);
         }
+
+        System.err.println("[ClaudeAgent] MAX_TOOL_ROUNDS (" + MAX_TOOL_ROUNDS + ") exceeded — aborting turn.");
+        return null;
     }
 
     @Override

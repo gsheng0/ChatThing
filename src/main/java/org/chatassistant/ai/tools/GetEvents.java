@@ -2,8 +2,9 @@ package org.chatassistant.ai.tools;
 
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Event;
-import org.chatassistant.GoogleCalendar;
+import org.chatassistant.google.GoogleCalendar;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.config.GoogleApiConfigurationProperties;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class GetEvents {
      * @param endTime range end in ISO 8601 format, e.g. "2026-03-07T23:59:59"
      * @return list of events, each with fields: id, title, start, end, location, description
      */
+    @ToolMethod
     public List<Map<String, String>> getEvents(String startTime, String endTime) {
         ZoneId zone = ZoneId.of(config.getCalendar().getTimeZone());
         long startMillis = LocalDateTime.parse(startTime).atZone(zone).toInstant().toEpochMilli();

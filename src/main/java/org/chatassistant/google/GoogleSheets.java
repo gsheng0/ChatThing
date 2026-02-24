@@ -1,4 +1,4 @@
-package org.chatassistant;
+package org.chatassistant.google;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -81,7 +81,8 @@ public class GoogleSheets {
             for (int i = 0; i < numRows; i++) {
                 final List<Object> row = values.get(i);
                 for (int j = 0; j < row.size(); j++) {
-                    cells[i][j] = row.get(j).toString();
+                    final Object val = row.get(j);
+                    cells[i][j] = val != null ? val.toString() : "";
                 }
             }
             return cells;

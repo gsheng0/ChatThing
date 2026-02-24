@@ -1,7 +1,8 @@
 package org.chatassistant.ai.tools;
 
-import org.chatassistant.GoogleCalendar;
+import org.chatassistant.google.GoogleCalendar;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.config.GoogleApiConfigurationProperties;
 
 @AiAgentTool
@@ -19,6 +20,7 @@ public class DeleteEvent {
      * @param eventId the ID of the event to delete (obtained from getEvents)
      * @return empty string on success, or an error message
      */
+    @ToolMethod
     public String deleteEvent(String eventId) {
         try {
             calendar.deleteEvent(config.getCalendar().getCalendarId(), eventId);

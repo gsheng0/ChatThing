@@ -6,8 +6,8 @@ import com.google.genai.Client;
 import com.google.genai.types.*;
 import com.google.genai.types.Tool;
 import org.chatassistant.Util;
-import org.chatassistant.ai.tools.ToolHolder;
-import org.chatassistant.ai.tools.ToolHolder.InvocableMethod;
+import org.chatassistant.ai.tools.ToolRegistry;
+import org.chatassistant.ai.tools.ToolRegistry.InvocableMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,7 +16,7 @@ import java.util.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class GeminiAgent implements AiAgent<GeminiContext> {
+public class GeminiAgent implements AiAgent<AgentContext> {
     private final Client client;
     private final GenerateContentConfig config;
     private final String modelName;
@@ -25,10 +25,10 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
-    public GeminiAgent(final String modelName, final String promptPath, final boolean realToolSet, final ToolHolder toolHolder) {
+    public GeminiAgent(final String modelName, final String promptPath, final ToolRegistry toolRegistry) {
         this.modelName = modelName;
         this.client = new Client();
-        this.toolMap = toolHolder.getToolMap(realToolSet);
+        this.toolMap = toolRegistry.getToolMap();
         final List<Method> methods = toolMap.values().stream().map(InvocableMethod::method).toList();
         this.config = getConfig(promptPath, methods);
     }
@@ -42,12 +42,12 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
     }
 
     @Override
-    public String ask(final GeminiContext context, final String prompt) {
+    public String ask(final AgentContext context, final String prompt) {
         return ask(context, prompt, List.of());
     }
 
     @Override
-    public String ask(final GeminiContext context, final String prompt, final List<String> imagePaths) {
+    public String ask(final AgentContext context, final String prompt, final List<String> imagePaths) {
         final List<Content> history = context.getHistory();
         final List<Part> parts = new ArrayList<>(List.of(Part.fromText(prompt)));
         System.out.println("HERE:" + prompt.substring(0, Math.min(prompt.length(), 100)));
@@ -61,7 +61,8 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
                 .parts(parts)
                 .build());
 
-        while (true) {
+        final int maxToolRounds = 20;
+        for (int round = 0; round < maxToolRounds; round++) {
             final GenerateContentResponse resp = client.models.generateContent(modelName, history, config);
 
             final Content modelContent = resp.candidates().orElseThrow(() -> new RuntimeException("Missing response candidates"))
@@ -88,6 +89,8 @@ public class GeminiAgent implements AiAgent<GeminiContext> {
                         .build());
             }
         }
+        System.err.println("[GeminiAgent] maxToolRounds (" + maxToolRounds + ") exceeded — aborting turn.");
+        return null;
     }
 
     @Override

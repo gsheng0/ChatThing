@@ -1,7 +1,8 @@
 package org.chatassistant.ai.tools;
 
-import org.chatassistant.GoogleSheets;
+import org.chatassistant.google.GoogleSheets;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.data.Contact;
 
 import java.util.Arrays;
@@ -22,6 +23,7 @@ public class RecordSplitExpense {
      * @param names the names to add the split expense to
      * @return errors, if any
      */
+    @ToolMethod
     public String recordSplitExpense(final double amount, final String names) {
         final List<String> validNames = Arrays.stream(names.split(","))
                 .map(String::trim)

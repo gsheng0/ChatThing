@@ -1,6 +1,7 @@
 package org.chatassistant.ai.tools;
 
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.entities.Pair;
 
 import java.util.*;
@@ -18,6 +19,7 @@ public class Settle {
      * @return a map mapping a person to a Pair of a String and a Double, representing the transactions that person needs to pay out,
      *          specified by name and amount
      */
+    @ToolMethod
     public Map<String, List<Pair<String, Double>>> settle() {
         final Map<String, Double> ledger = getSummary.getSummary();
         final List<String> negative = new ArrayList<>();

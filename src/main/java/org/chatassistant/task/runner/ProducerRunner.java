@@ -2,14 +2,14 @@ package org.chatassistant.task.runner;
 
 import org.chatassistant.task.ProducerTask;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ProducerRunner<T> extends Runner {
-    private final ConcurrentHashMap<String, List<BlockingDeque<T>>> outputMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<BlockingDeque<T>>> outputMap = new ConcurrentHashMap<>();
     private final ProducerTask<T> task;
 
     public ProducerRunner(final ProducerTask<T> task) {
@@ -17,8 +17,7 @@ public class ProducerRunner<T> extends Runner {
     }
 
     public void register(final ConsumerRunner<T> runner, final String topic) {
-        outputMap.putIfAbsent(topic, new ArrayList<>());
-        outputMap.get(topic).add(runner.queue());
+        outputMap.computeIfAbsent(topic, k -> new CopyOnWriteArrayList<>()).add(runner.queue());
     }
 
     public void register(final ConsumerRunner<T> runner, final List<String> topics) {
@@ -34,6 +33,12 @@ public class ProducerRunner<T> extends Runner {
         }
     }
 
+    public void unregister(final ConsumerRunner<T> runner, final List<String> topics) {
+        for (final String topic : topics) {
+            unregister(runner, topic);
+        }
+    }
+
     @Override
     public void run() {
         while (isRunning()) {
@@ -42,7 +47,7 @@ public class ProducerRunner<T> extends Runner {
     }
 
     private void distribute(final T product) {
-        for (final Map.Entry<String, List<BlockingDeque<T>>> entry : outputMap.entrySet()) {
+        for (final Map.Entry<String, CopyOnWriteArrayList<BlockingDeque<T>>> entry : outputMap.entrySet()) {
             if (!task.shouldReceive(product, entry.getKey())) {
                 continue;
             }

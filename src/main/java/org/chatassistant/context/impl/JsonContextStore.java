@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.types.Content;
 import org.chatassistant.Logger;
-import org.chatassistant.ai.agent.GeminiContext;
+import org.chatassistant.ai.agent.AgentContext;
 import org.chatassistant.config.ContextConfigurationProperties;
 import org.chatassistant.context.ContextStore;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,7 @@ public class JsonContextStore implements ContextStore {
     }
 
     @Override
-    public Optional<GeminiContext> load(final String key) {
+    public Optional<AgentContext> load(final String key) {
         final Path file = filePath(key);
         if (!Files.exists(file)) {
             return Optional.empty();
@@ -36,7 +36,7 @@ public class JsonContextStore implements ContextStore {
         try {
             final String json = Files.readString(file, StandardCharsets.UTF_8);
             final List<String> contentJsonList = om.readValue(json, LIST_TYPE);
-            final GeminiContext context = new GeminiContext();
+            final AgentContext context = new AgentContext();
             for (final String contentJson : contentJsonList) {
                 context.getHistory().add(Content.fromJson(contentJson));
             }
@@ -48,7 +48,7 @@ public class JsonContextStore implements ContextStore {
     }
 
     @Override
-    public void save(final String key, final GeminiContext context) {
+    public void save(final String key, final AgentContext context) {
         try {
             final Path file = filePath(key);
             Files.createDirectories(file.getParent());

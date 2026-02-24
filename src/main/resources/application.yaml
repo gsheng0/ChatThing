@@ -18,19 +18,17 @@ google:
 
 tasks:
   admin-chat: "Admin"
-  capabilities:
+  agents:
     expenses:
       provider: claude
       prompt-path: src/main/resources/expenseTrackingPrompt2
       model-name: claude-sonnet-4-6
-      real-tool-set: true
       chats:
         - "Sewerslide Pack"
     scheduling:
       provider: claude
       prompt-path: src/main/resources/schedulingPrompt
       model-name: claude-sonnet-4-6
-      real-tool-set: true
       chats:
         - "Sewerslide Pack"
 

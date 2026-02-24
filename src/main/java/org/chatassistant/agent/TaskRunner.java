@@ -1,7 +1,11 @@
-package org.chatassistant.config;
+package org.chatassistant.agent;
 
 import jakarta.annotation.PostConstruct;
 import org.chatassistant.Logger;
+import org.chatassistant.ai.tools.ToolRegistry;
+import org.chatassistant.config.LoggingConfigurationProperties;
+import org.chatassistant.config.TasksConfigurationProperties;
+import org.chatassistant.context.ContextManager;
 import org.chatassistant.entities.Message;
 import org.chatassistant.task.runner.ConsumerRunner;
 import org.chatassistant.task.runner.ProducerRunner;
@@ -12,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
 @Component
 public class TaskRunner {
@@ -21,20 +24,23 @@ public class TaskRunner {
     private final MessagePollingTask pollingTask;
     private final TasksConfigurationProperties tasksConfig;
     private final LoggingConfigurationProperties loggingConfig;
-    private final CapabilityManager capabilityManager;
-    private final DynamicConfigStore configStore;
+    private final AgentStore agentStore;
+    private final ToolRegistry toolRegistry;
+    private final ContextManager contextManager;
 
     @Autowired
     public TaskRunner(final MessagePollingTask pollingTask,
                       final TasksConfigurationProperties tasksConfig,
                       final LoggingConfigurationProperties loggingConfig,
-                      final CapabilityManager capabilityManager,
-                      final DynamicConfigStore configStore) {
+                      final AgentStore agentStore,
+                      final ToolRegistry toolRegistry,
+                      final ContextManager contextManager) {
         this.pollingTask = pollingTask;
         this.tasksConfig = tasksConfig;
         this.loggingConfig = loggingConfig;
-        this.capabilityManager = capabilityManager;
-        this.configStore = configStore;
+        this.agentStore = agentStore;
+        this.toolRegistry = toolRegistry;
+        this.contextManager = contextManager;
     }
 
     @PostConstruct
@@ -43,37 +49,20 @@ public class TaskRunner {
         Logger.init(LOG_BASE + loggingConfig.getOutputFolder() + "/" + timestamp + ".log");
 
         final ProducerRunner<Message> producer = new ProducerRunner<>(pollingTask);
-        capabilityManager.init(producer);
+        final AgentManager agentManager = new AgentManager(toolRegistry, contextManager, producer);
 
-        // Bootstrap: load JSON; seed from YAML capabilities if absent
-        DynamicConfig config = configStore.load();
-        if (config.getCapabilities().isEmpty() && !tasksConfig.getCapabilities().isEmpty()) {
-            for (final var entry : tasksConfig.getCapabilities().entrySet()) {
-                final TasksConfigurationProperties.CapabilityConfig src = entry.getValue();
-                final DynamicConfig.Capability cap = new DynamicConfig.Capability();
-                cap.setProvider(src.getProvider());
-                cap.setPromptPath(src.getPromptPath());
-                cap.setModelName(src.getModelName());
-                cap.setRealToolSet(src.isRealToolSet());
-                // Use first chat in the list as the single chat value
-                final List<String> chats = src.getChats();
-                cap.setChat(chats != null && !chats.isEmpty() ? chats.get(0) : null);
-                cap.setEnabled(true);
-                config.getCapabilities().put(entry.getKey(), cap);
-            }
-            configStore.save(config);
-        }
+        final AgentRegistry registry = agentStore.load();
 
-        // Start all enabled capabilities
-        config.getCapabilities().entrySet().stream()
+        // Start all enabled agents
+        registry.getAgents().entrySet().stream()
                 .filter(e -> e.getValue().isEnabled())
-                .forEach(e -> capabilityManager.start(e.getKey(), e.getValue()));
+                .forEach(e -> agentManager.start(e.getKey(), e.getValue()));
 
         // Register admin chat consumer
         final String adminChat = tasksConfig.getAdminChat();
         if (adminChat != null && !adminChat.isBlank()) {
             final AdminChatProcessingTask adminTask =
-                    new AdminChatProcessingTask(capabilityManager, configStore, adminChat);
+                    new AdminChatProcessingTask(agentManager, agentStore, adminChat);
             final ConsumerRunner<Message> adminConsumer = new ConsumerRunner<>(adminTask);
             producer.register(adminConsumer, adminChat);
             Thread.ofVirtual().name("Consumer-admin").start(adminConsumer);

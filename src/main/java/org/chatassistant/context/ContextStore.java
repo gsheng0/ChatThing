@@ -1,10 +1,10 @@
 package org.chatassistant.context;
 
-import org.chatassistant.ai.agent.GeminiContext;
+import org.chatassistant.ai.agent.AgentContext;
 
 import java.util.Optional;
 
 public interface ContextStore {
-    Optional<GeminiContext> load(String key);
-    void save(String key, GeminiContext context);
+    Optional<AgentContext> load(String key);
+    void save(String key, AgentContext context);
 }

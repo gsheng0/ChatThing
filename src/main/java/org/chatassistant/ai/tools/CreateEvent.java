@@ -3,8 +3,9 @@ package org.chatassistant.ai.tools;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
-import org.chatassistant.GoogleCalendar;
+import org.chatassistant.google.GoogleCalendar;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.config.GoogleApiConfigurationProperties;
 
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ public class CreateEvent {
      * @param location optional location; pass empty string to omit
      * @return the created event ID on success, or an error message prefixed with "Error:"
      */
+    @ToolMethod
     public String createEvent(String title, String startTime, String endTime,
                               String description, String location) {
         try {

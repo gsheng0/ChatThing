@@ -44,9 +44,14 @@ public class MessagePoller {
                 if (line.isEmpty()) continue;
                 final String entry = decodeBase64Bytes(line);
                 final String[] fields = entry.split("\\|");
+                if (fields.length < 6) {
+                    System.err.println("[MessagePoller] Skipping malformed entry (" + fields.length + " fields): " + entry);
+                    continue;
+                }
                 final String rawSender = fields[1];
                 final String resolvedSender = contact.getIdToNameMap().getOrDefault(rawSender, rawSender);
-                messages.add(new Message(fields[0], fields[2] == null || fields[2].isEmpty() ? fields[3] : fields[2], resolvedSender, fields[4], fields[5]));
+                final String text = fields[2].isEmpty() ? fields[3] : fields[2];
+                messages.add(new Message(fields[0], text, resolvedSender, fields[4], fields[5]));
             }
             return messages;
         } catch (Exception e) {

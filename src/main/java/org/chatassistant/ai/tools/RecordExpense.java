@@ -1,8 +1,9 @@
 package org.chatassistant.ai.tools;
 
-import org.chatassistant.GoogleSheets;
+import org.chatassistant.google.GoogleSheets;
 import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.data.Contact;
 
 @AiAgentTool
@@ -23,6 +24,7 @@ public class RecordExpense {
      *               negative amount if that person owes that money
      * @return errors, if any
      */
+    @ToolMethod
     public String recordExpense(String name, final double amount) {
         name = name.toLowerCase();
 

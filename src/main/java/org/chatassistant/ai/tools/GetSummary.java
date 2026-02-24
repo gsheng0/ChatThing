@@ -1,7 +1,8 @@
 package org.chatassistant.ai.tools;
 
-import org.chatassistant.GoogleSheets;
+import org.chatassistant.google.GoogleSheets;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.data.Contact;
 
 import java.util.HashMap;
@@ -22,6 +23,7 @@ public class GetSummary {
      *
      * @return a map of names to amount owed to that person
      */
+    @ToolMethod
     public Map<String, Double> getSummary() {
         final Map<String, Double> summary = new HashMap<>();
         final String[] nums = sheets.getCellRange(sheets.expenseSheet, "A2:G2")[0];

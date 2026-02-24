@@ -6,9 +6,10 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.Part;
 import org.chatassistant.Logger;
 import org.chatassistant.Util;
-import org.chatassistant.ai.agent.GeminiContext;
+import org.chatassistant.ai.agent.AgentContext;
 import org.chatassistant.config.ContextConfigurationProperties;
 import org.chatassistant.context.ContextTrimmer;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -33,8 +34,13 @@ public class LlmContextTrimmer implements ContextTrimmer {
                 .build();
     }
 
+    @PreDestroy
+    public void close() {
+        client.close();
+    }
+
     @Override
-    public Optional<String> trim(final GeminiContext context) {
+    public Optional<String> trim(final AgentContext context) {
         final List<Content> history = context.getHistory();
 
         // Count total chars (non-text parts count as 0)

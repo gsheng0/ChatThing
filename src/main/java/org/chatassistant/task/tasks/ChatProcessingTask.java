@@ -1,7 +1,7 @@
 package org.chatassistant.task.tasks;
 
 import org.chatassistant.ai.agent.AiAgent;
-import org.chatassistant.ai.agent.GeminiContext;
+import org.chatassistant.ai.agent.AgentContext;
 import org.chatassistant.context.ContextManager;
 import org.chatassistant.entities.Message;
 import org.chatassistant.task.ConsumerTask;
@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatProcessingTask implements ConsumerTask<Message> {
-    private final AiAgent<GeminiContext> agent;
+    private final AiAgent<AgentContext> agent;
     private final ContextManager contextManager;
     private final String capabilityName;
     private final String contextKey;
 
-    public ChatProcessingTask(final AiAgent<GeminiContext> agent, final ContextManager contextManager,
+    public ChatProcessingTask(final AiAgent<AgentContext> agent, final ContextManager contextManager,
                               final String capabilityName, final String contextKey) {
         this.agent = agent;
         this.contextManager = contextManager;
@@ -38,7 +38,7 @@ public class ChatProcessingTask implements ConsumerTask<Message> {
         }
 
         if (!prompt.isEmpty() || !imagePaths.isEmpty()) {
-            final GeminiContext context = contextManager.getOrCreate(contextKey);
+            final AgentContext context = contextManager.getOrCreate(contextKey);
             try {
                 agent.ask(context, prompt.toString(), imagePaths);
             } catch (Exception e) {

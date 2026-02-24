@@ -1,13 +1,19 @@
 package org.chatassistant.task.tasks;
 
-import org.chatassistant.config.CapabilityManager;
-import org.chatassistant.config.DynamicConfig;
-import org.chatassistant.config.DynamicConfigStore;
+import org.chatassistant.agent.AgentConfig;
+import org.chatassistant.agent.AgentManager;
+import org.chatassistant.agent.AgentRegistry;
+import org.chatassistant.agent.AgentStore;
+import org.chatassistant.ai.agent.ClaudeAgent;
+import org.chatassistant.ai.agent.AgentContext;
 import org.chatassistant.entities.Message;
 import org.chatassistant.task.ConsumerTask;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 public class AdminChatProcessingTask implements ConsumerTask<Message> {
     private static final String SCRIPT_PATH = "/Users/georgesheng/proj/scheduler2/send_message_to_gc.scpt";
@@ -22,17 +28,18 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
               disable <name>
               set <name> chat <chat name>
               set <name> prompt <path>
-              set <name> model <model>""";
+              set <name> model <model>
+              fix <name> <problem description>""";
 
-    private final CapabilityManager capabilityManager;
-    private final DynamicConfigStore configStore;
+    private final AgentManager agentManager;
+    private final AgentStore agentStore;
     private final String adminChat;
 
-    public AdminChatProcessingTask(final CapabilityManager capabilityManager,
-                                   final DynamicConfigStore configStore,
+    public AdminChatProcessingTask(final AgentManager agentManager,
+                                   final AgentStore agentStore,
                                    final String adminChat) {
-        this.capabilityManager = capabilityManager;
-        this.configStore = configStore;
+        this.agentManager = agentManager;
+        this.agentStore = agentStore;
         this.adminChat = adminChat;
     }
 
@@ -64,6 +71,7 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
                 case "enable" -> handleEnable(rest);
                 case "disable" -> handleDisable(rest);
                 case "set" -> handleSet(rest);
+                case "fix" -> handleFix(rest);
                 default -> HELP;
             };
         } catch (Exception e) {
@@ -72,8 +80,8 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
     }
 
     private String handleList() {
-        final DynamicConfig config = configStore.load();
-        return capabilityManager.listAll(config);
+        final AgentRegistry registry = agentStore.load();
+        return agentManager.listAll(registry);
     }
 
     private String handleAdd(final String rest) {
@@ -84,66 +92,69 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
         final String name = parts[0];
         final String chat = parts[1];
 
-        final DynamicConfig config = configStore.load();
-        if (config.getCapabilities().containsKey(name)) {
-            return "Capability '" + name + "' already exists.";
+        final AgentRegistry registry = agentStore.load();
+        if (registry.getAgents().containsKey(name)) {
+            return "Agent \'" + name + "\' already exists.";
         }
 
-        final DynamicConfig.Capability cap = new DynamicConfig.Capability();
-        cap.setProvider("claude");
-        cap.setModelName("claude-sonnet-4-6");
-        cap.setPromptPath("src/main/resources/expenseTrackingPrompt2");
-        cap.setRealToolSet(true);
-        cap.setChat(chat);
-        cap.setEnabled(true);
+        final AgentConfig config = new AgentConfig();
+        config.setProvider("claude");
+        config.setModelName("claude-sonnet-4-6");
+        config.setPromptPath("src/main/resources/expenseTrackingPrompt2");
+        config.setChats(List.of(chat));
+        config.setEnabled(true);
 
-        config.getCapabilities().put(name, cap);
-        configStore.save(config);
-        capabilityManager.start(name, cap);
-        return "Added and started capability '" + name + "' on chat '" + chat + "'.";
+        registry.getAgents().put(name, config);
+        agentStore.save(registry);
+        agentManager.start(name, config);
+        return "Added and started agent \'" + name + "\' on chat \'" + chat + "\'.";
     }
 
     private String handleRemove(final String rest) {
         final String name = rest.trim();
         if (name.isEmpty()) return "Usage: remove <name>";
 
-        final DynamicConfig config = configStore.load();
-        if (!config.getCapabilities().containsKey(name)) {
-            return "Capability '" + name + "' not found.";
+        if (agentStore.isYamlDefined(name)) {
+            return "Agent '" + name + "' is defined in application.yaml and cannot be removed. Use 'disable " + name + "' instead.";
         }
 
-        capabilityManager.stop(name);
-        config.getCapabilities().remove(name);
-        configStore.save(config);
-        return "Removed capability '" + name + "'.";
+        final AgentRegistry registry = agentStore.load();
+        if (!registry.getAgents().containsKey(name)) {
+            return "Agent '" + name + "' not found.";
+        }
+
+        agentManager.stop(name);
+        registry.getAgents().remove(name);
+        agentStore.save(registry);
+        return "Removed agent '" + name + "'.";
     }
 
     private String handleEnable(final String rest) {
         final String name = rest.trim();
         if (name.isEmpty()) return "Usage: enable <name>";
 
-        final DynamicConfig config = configStore.load();
-        if (!config.getCapabilities().containsKey(name)) {
-            return "Capability '" + name + "' not found.";
+        final AgentRegistry registry = agentStore.load();
+        if (!registry.getAgents().containsKey(name)) {
+            return "Agent \'" + name + "\' not found.";
         }
 
-        capabilityManager.enable(name, config);
-        configStore.save(config);
-        return "Enabled capability '" + name + "'.";
+        agentManager.enable(name, registry);
+        agentStore.save(registry);
+        return "Enabled agent \'" + name + "\'.";
     }
 
     private String handleDisable(final String rest) {
         final String name = rest.trim();
         if (name.isEmpty()) return "Usage: disable <name>";
 
-        final DynamicConfig config = configStore.load();
-        if (!config.getCapabilities().containsKey(name)) {
-            return "Capability '" + name + "' not found.";
+        final AgentRegistry registry = agentStore.load();
+        if (!registry.getAgents().containsKey(name)) {
+            return "Agent \'" + name + "\' not found.";
         }
 
-        capabilityManager.disable(name, config);
-        configStore.save(config);
-        return "Disabled capability '" + name + "'.";
+        agentManager.disable(name, registry);
+        agentStore.save(registry);
+        return "Disabled agent \'" + name + "\'.";
     }
 
     private String handleSet(final String rest) {
@@ -155,20 +166,70 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
         final String field = parts[1].toLowerCase();
         final String value = parts[2];
 
-        final DynamicConfig config = configStore.load();
-        final DynamicConfig.Capability cap = config.getCapabilities().get(name);
-        if (cap == null) return "Capability '" + name + "' not found.";
+        final AgentRegistry registry = agentStore.load();
+        final AgentConfig config = registry.getAgents().get(name);
+        if (config == null) return "Agent \'" + name + "\' not found.";
 
         switch (field) {
-            case "chat" -> cap.setChat(value);
-            case "prompt" -> cap.setPromptPath(value);
-            case "model" -> cap.setModelName(value);
-            default -> { return "Unknown field '" + field + "'. Use: chat, prompt, or model"; }
+            case "chat" -> config.setChats(List.of(value));
+            case "prompt" -> config.setPromptPath(value);
+            case "model" -> config.setModelName(value);
+            default -> { return "Unknown field \'" + field + "\'. Use: chat, prompt, or model"; }
         }
 
-        configStore.save(config);
-        capabilityManager.update(name, config);
-        return "Updated " + field + " for '" + name + "' to: " + value;
+        agentStore.save(registry);
+        agentManager.update(name, registry);
+        return "Updated " + field + " for \'" + name + "\' to: " + value;
+    }
+
+    private String handleFix(final String rest) {
+        // fix <name> <problem description>
+        final String[] parts = rest.split("\\s+", 2);
+        if (parts.length < 2) return "Usage: fix <name> <problem description>";
+
+        final String name = parts[0];
+        final String problem = parts[1];
+
+        final AgentRegistry registry = agentStore.load();
+        final AgentConfig config = registry.getAgents().get(name);
+        if (config == null) return "Agent \'" + name + "\' not found.";
+
+        final String promptPath = config.getPromptPath();
+        final String currentPrompt;
+        try {
+            currentPrompt = Files.readString(Path.of(promptPath));
+        } catch (Exception e) {
+            return "Error reading prompt at " + promptPath + ": " + e.getMessage();
+        }
+
+        final String updatedPrompt;
+        try {
+            updatedPrompt = rewritePrompt(currentPrompt, problem);
+        } catch (Exception e) {
+            return "Error calling LLM: " + e.getMessage();
+        }
+
+        try {
+            Files.writeString(Path.of(promptPath), updatedPrompt);
+        } catch (Exception e) {
+            return "Error writing updated prompt: " + e.getMessage();
+        }
+
+        agentManager.update(name, registry);
+        return "Prompt for \'" + name + "\' updated and agent restarted.";
+    }
+
+    private String rewritePrompt(final String currentPrompt, final String problem) {
+        final ClaudeAgent agent = ClaudeAgent.toolFree("claude-sonnet-4-6",
+                "You are an expert AI prompt engineer. You will be given an AI agent's " +
+                "system prompt and a description of a problem or desired improvement. " +
+                "Rewrite the prompt to address it. Return ONLY the updated prompt text — " +
+                "no explanation, no preamble, no markdown code fences.");
+        final String result = agent.ask(new AgentContext(),
+                "Current prompt:\n\n" + currentPrompt + "\n\n---\nProblem to fix: " + problem);
+        agent.kill();
+        if (result == null) throw new RuntimeException("no text in response");
+        return result;
     }
 
     private static final int MAX_MESSAGE_LENGTH = 2000;
@@ -192,7 +253,6 @@ public class AdminChatProcessingTask implements ConsumerTask<Message> {
             while ((line = error.readLine()) != null) {
                 System.err.println("[AdminReply Error] " + line);
             }
-
             process.waitFor();
         } catch (Exception e) {
             e.printStackTrace();

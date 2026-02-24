@@ -3,8 +3,9 @@ package org.chatassistant.ai.tools;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
-import org.chatassistant.GoogleCalendar;
+import org.chatassistant.google.GoogleCalendar;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 import org.chatassistant.config.GoogleApiConfigurationProperties;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class UpdateEvent {
      * @param location new location, or empty string to keep existing
      * @return empty string on success, or an error message
      */
+    @ToolMethod
     public String updateEvent(String eventId, String title, String startTime, String endTime,
                               String description, String location) {
         try {

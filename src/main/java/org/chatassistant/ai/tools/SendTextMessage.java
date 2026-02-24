@@ -2,6 +2,7 @@ package org.chatassistant.ai.tools;
 
 import org.chatassistant.Logger;
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -16,6 +17,7 @@ public class SendTextMessage {
      * @param chatName the exact name of the group chat to send to
      * @param message the content of the text message to be sent
      */
+    @ToolMethod
     public void sendTextMessage(final String chatName, final String message) {
         final String paddedMessage = "[Intern]: " + message;
         final Process process;

@@ -4,10 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.chatassistant.Main;
-import org.chatassistant.ai.tools.ToolHolder;
-import org.chatassistant.ai.tools.ToolHolder.InvocableMethod;
+import org.chatassistant.ai.tools.ToolRegistry;
+import org.chatassistant.ai.tools.ToolRegistry.InvocableMethod;
 
-import javax.tools.Tool;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -31,10 +30,10 @@ public class OpenAiAgent implements AiAgent<Void> {
     private final HttpClient httpClient;
     private final Map<String, InvocableMethod> toolMap;
 
-    public OpenAiAgent(final boolean realToolSet, final ToolHolder toolHolder) {
+    public OpenAiAgent(final ToolRegistry toolRegistry) {
         this.mapper = new ObjectMapper();
         this.httpClient = HttpClient.newHttpClient();
-        this.toolMap = toolHolder.getToolMap(realToolSet);
+        this.toolMap = toolRegistry.getToolMap();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.chatassistant.ai.tools;
 
 import org.chatassistant.ai.tools.annotation.AiAgentTool;
+import org.chatassistant.ai.tools.annotation.ToolMethod;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,6 +16,7 @@ public class NotifyOwner {
      * Use this to report errors, flag anomalies, or send alerts that only the owner should see.
      * @param message the message content
      */
+    @ToolMethod
     public void notifyOwner(final String message) {
         final String paddedMessage = "[Intern]: " + message;
         final Process process;
